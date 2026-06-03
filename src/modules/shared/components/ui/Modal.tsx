@@ -41,7 +41,11 @@ export const Modal = ({ open, onClose, onOpenChange, className, children }) => {
   );
 };
 
-export const ModalHeader = ({ title, onClose, subtitle }) => (
+export const ModalTitle = ({ children }) => (
+  <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>{children}</div>
+);
+
+export const ModalHeader = ({ title, onClose, subtitle, children }) => (
   <div style={{
     padding: '0 20px 14px',
     flexShrink: 0,
