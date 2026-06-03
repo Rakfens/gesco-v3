@@ -213,3 +213,5 @@ export default function VentesPage() {
     </>
   );
 }
+
+export const dynamic = "force-dynamic";

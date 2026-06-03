@@ -213,3 +213,5 @@ export default function AchatsPage() {
     </>
   );
 }
+
+export const dynamic = "force-dynamic";

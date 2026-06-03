@@ -262,3 +262,5 @@ export default function AgentsPage() {
     </>
   );
 }
+
+export const dynamic = "force-dynamic";

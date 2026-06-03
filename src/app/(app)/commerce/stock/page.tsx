@@ -222,3 +222,5 @@ export default function StockPage() {
     </>
   );
 }
+
+export const dynamic = "force-dynamic";

@@ -262,3 +262,5 @@ export default function LivraisonDashboardPage() {
     </>
   );
 }
+
+export const dynamic = "force-dynamic";

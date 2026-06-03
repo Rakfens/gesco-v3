@@ -195,3 +195,5 @@ export default function DepensesPage() {
     </>
   );
 }
+
+export const dynamic = "force-dynamic";

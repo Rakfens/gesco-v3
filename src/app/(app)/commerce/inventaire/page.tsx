@@ -196,3 +196,5 @@ export default function InventairePage() {
     </>
   );
 }
+
+export const dynamic = "force-dynamic";

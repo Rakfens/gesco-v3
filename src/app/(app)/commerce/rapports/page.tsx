@@ -279,3 +279,5 @@ export default function RapportsPage() {
     </>
   );
 }
+
+export const dynamic = "force-dynamic";

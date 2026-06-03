@@ -6,6 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { CompanyProvider } from "@/modules/shared/context/CompanyContext";
 
+export const dynamic = "force-dynamic";
+
 interface NavItem {
   label: string;
   href: string;
