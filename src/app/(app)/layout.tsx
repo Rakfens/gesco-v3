@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 interface NavItem {
   label: string;
   href: string;
+  icon: React.ReactNode;
 }
 
 interface NavGroup {
@@ -22,28 +23,151 @@ const navGroups: NavGroup[] = [
   {
     title: "Commerce",
     items: [
-      { label: "Dashboard", href: "/commerce/dashboard" },
-      { label: "Ventes", href: "/commerce/ventes" },
-      { label: "Achats", href: "/commerce/achats" },
-      { label: "Stock", href: "/commerce/stock" },
-      { label: "Inventaire", href: "/commerce/inventaire" },
-      { label: "Depenses", href: "/commerce/depenses" },
-      { label: "Rapports", href: "/commerce/rapports" },
+      { label: "Dashboard", href: "/commerce/dashboard", icon: <IconLayout /> },
+      { label: "Ventes", href: "/commerce/ventes", icon: <IconShoppingCart /> },
+      { label: "Achats", href: "/commerce/achats", icon: <IconShoppingBag /> },
+      { label: "Produits", href: "/commerce/produits", icon: <IconPackage /> },
+      { label: "Categories", href: "/commerce/categories", icon: <IconTags /> },
+      { label: "Clients", href: "/commerce/clients", icon: <IconUsers /> },
+      { label: "Agents", href: "/commerce/agents", icon: <IconUserCog /> },
+      { label: "Stock", href: "/commerce/stock", icon: <IconWarehouse /> },
+      { label: "Inventaire", href: "/commerce/inventaire", icon: <IconClipboardList /> },
+      { label: "Depenses", href: "/commerce/depenses", icon: <IconReceipt /> },
+      { label: "Rapports", href: "/commerce/rapports", icon: <IconBarChart /> },
     ],
   },
   {
     title: "Livraison",
     items: [
-      { label: "Dashboard", href: "/livraison/dashboard" },
-      { label: "Livraison", href: "/livraison/livraisons" },
-      { label: "Agents", href: "/livraison/agents" },
-      { label: "Recap", href: "/livraison/recap" },
-      { label: "Recuperation", href: "/livraison/recuperation" },
-      { label: "Gerant", href: "/livraison/gerant" },
-      { label: "Historique", href: "/livraison/historique" },
+      { label: "Dashboard", href: "/livraison/dashboard", icon: <IconLayout /> },
+      { label: "Livraisons", href: "/livraison/livraisons", icon: <IconTruck /> },
+      { label: "Agents", href: "/livraison/agents", icon: <IconUserCog /> },
+      { label: "Recap", href: "/livraison/recap", icon: <IconClipboardList /> },
+      { label: "Recuperation", href: "/livraison/recuperation", icon: <IconRotateCcw /> },
+      { label: "Gerant", href: "/livraison/gerant", icon: <IconUser /> },
+      { label: "Historique", href: "/livraison/historique", icon: <IconHistory /> },
     ],
   },
 ];
+
+function IconLayout() {
+  return (
+    <svg className="mr-3 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
+    </svg>
+  );
+}
+function IconShoppingCart() {
+  return (
+    <svg className="mr-3 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+    </svg>
+  );
+}
+function IconShoppingBag() {
+  return (
+    <svg className="mr-3 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" />
+      <path d="M16 10a4 4 0 0 1-8 0" />
+    </svg>
+  );
+}
+function IconPackage() {
+  return (
+    <svg className="mr-3 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path d="m7.5 4.27 9 5.15" /><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+      <path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" />
+    </svg>
+  );
+}
+function IconTags() {
+  return (
+    <svg className="mr-3 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path d="M9 5H2v7l6.29 6.29c.94.94 2.48.94 3.42 0l3.58-3.58c.94-.94.94-2.48 0-3.42L9 5Z" />
+      <path d="M6 9h.01" /><path d="m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19" />
+    </svg>
+  );
+}
+function IconUsers() {
+  return (
+    <svg className="mr-3 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+function IconUserCog() {
+  return (
+    <svg className="mr-3 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <circle cx="12" cy="8" r="5" /><path d="M20 21a8 8 0 1 0-16 0" />
+      <circle cx="18" cy="18" r="3" /><path d="M18 16v1" /><path d="M18 20v1" /><path d="M16.5 17.5h1" /><path d="M19.5 19.5h1" />
+    </svg>
+  );
+}
+function IconWarehouse() {
+  return (
+    <svg className="mr-3 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z" />
+      <path d="M6 18h12" /><path d="M6 14h12" /><path d="M6 10h12" />
+    </svg>
+  );
+}
+function IconClipboardList() {
+  return (
+    <svg className="mr-3 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <rect width="8" height="4" x="8" y="2" rx="1" ry="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+      <path d="M12 11h4" /><path d="M12 16h4" /><path d="M8 11h.01" /><path d="M8 16h.01" />
+    </svg>
+  );
+}
+function IconReceipt() {
+  return (
+    <svg className="mr-3 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
+      <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" /><path d="M12 17.5v-11" />
+    </svg>
+  );
+}
+function IconBarChart() {
+  return (
+    <svg className="mr-3 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" />
+    </svg>
+  );
+}
+function IconTruck() {
+  return (
+    <svg className="mr-3 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" />
+      <path d="M15 18H9" /><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14" />
+      <circle cx="17" cy="18" r="2" /><circle cx="7" cy="18" r="2" />
+    </svg>
+  );
+}
+function IconRotateCcw() {
+  return (
+    <svg className="mr-3 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" />
+    </svg>
+  );
+}
+function IconUser() {
+  return (
+    <svg className="mr-3 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+function IconHistory() {
+  return (
+    <svg className="mr-3 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path d="M3 3v5h5" /><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" />
+      <path d="M12 7v5l4 2" />
+    </svg>
+  );
+}
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -115,6 +239,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                           : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                       }`}
                     >
+                      {item.icon}
                       {item.label}
                     </Link>
                   </li>
