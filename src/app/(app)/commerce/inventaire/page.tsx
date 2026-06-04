@@ -231,7 +231,7 @@ export default function InventairePage() {
       </div>
 
       {/* Modal Voir / Modifier */}
-      <Modal isOpen={modalMode !== null} onClose={closeModal}>
+      <Modal open={modalMode !== null} onClose={closeModal}>
         <ModalHeader>
           {modalMode === 'view' ? 'Détails de l\'inventaire' : 'Modifier l\'inventaire'}
         </ModalHeader>

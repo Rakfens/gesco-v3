@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { getCurrentCompany } from "@/lib/supabase";
 import { formatAr } from "@/modules/shared/utils/constants";
-import { Button, Input, Select, Badge, Card, CardHeader, CardTitle, Table, TableHead, TableBody, TableRow, TableCell, TableEmpty } from "@/modules/shared/components/ui";
+import { Button, Input, Select, Badge, Card, CardHeader, CardTitle, Table, TableHead, TableBody, TableRow, TableCell, TableEmpty, Modal, ModalHeader, ModalBody, ModalFooter } from "@/modules/shared/components/ui";
 
 export default function RapportsPage() {
   const [rapports, setRapports] = useState([]);
@@ -17,6 +17,12 @@ export default function RapportsPage() {
     dateFin: ""
   });
   const [currentCompany, setCurrentCompany] = useState<any>(null);
+
+  // Modal states
+  const [selectedRapport, setSelectedRapport] = useState<any>(null);
+  const [modalMode, setModalMode] = useState<'view' | 'edit' | null>(null);
+  const [editForm, setEditForm] = useState<any>({});
+  const [saving, setSaving] = useState(false);
 
   // Fetch current company on mount
   useEffect(() => {
@@ -132,6 +138,47 @@ export default function RapportsPage() {
     setFilters(prev => ({ ...prev, [field]: date || "" }));
   };
 
+  // Modal functions
+  const openModal = (rapport: any, mode: 'view' | 'edit') => {
+    setSelectedRapport(rapport);
+    setModalMode(mode);
+    setEditForm({
+      type: rapport.type || '',
+      reference: rapport.reference || '',
+      date: rapport.date || '',
+      client: rapport.client || '',
+      montant: rapport.montant || 0,
+      statut: rapport.statut || ''
+    });
+  };
+
+  const closeModal = () => {
+    setSelectedRapport(null);
+    setModalMode(null);
+    setEditForm({});
+    setSaving(false);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedRapport) return;
+    setSaving(true);
+    try {
+      // Determine source table based on type
+      const tableMap: Record<string, string> = { 'Vente': 'ventes', 'Achat': 'achats', 'Livraison': 'livraisons' };
+      const table = tableMap[selectedRapport.type];
+      if (table) {
+        const { error } = await supabase.from(table).update({ statut: editForm.statut }).eq('id', selectedRapport.id);
+        if (error) throw error;
+      }
+      await fetchRapports();
+      closeModal();
+    } catch (err: any) {
+      setError(err.message || "Erreur lors de la sauvegarde");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <>
       <div className="mb-6">
@@ -206,6 +253,7 @@ export default function RapportsPage() {
                     <TableCell>Client/Fournisseur</TableCell>
                     <TableCell className="w-20">Montant</TableCell>
                     <TableCell className="w-20">Statut</TableCell>
+                    <TableCell className="w-24">Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -218,11 +266,15 @@ export default function RapportsPage() {
                       <TableCell className="text-right font-medium">{formatAr(rapport.montant)}</TableCell>
                       <TableCell>
                         <Badge 
-                          variant={rapport.statut === 'paye' || rapport.statut === 'termine' || rapport.statut === 'livre' ? 'success' : 
+                          variant={rapport.statut === 'paye' || rapport.statut === 'termine' || rapport.statut === 'livre' ? 'success' :
                                    rapport.statut === 'annule' || rapport.statut === 'non_paye' ? 'destructive' : 'secondary'}
                         >
                           {rapport.statut}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => openModal(rapport, 'view')}>Voir</Button>
+                        <Button variant="outline" size="sm" onClick={() => openModal(rapport, 'edit')}>Modifier</Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -276,6 +328,68 @@ export default function RapportsPage() {
           </>
         )}
       </div>
+
+      {/* Modal Voir / Modifier */}
+      {modalMode && selectedRapport && (
+        <Modal open={true} onClose={closeModal}>
+          <ModalHeader>
+            {modalMode === 'view' ? 'Détails du rapport' : 'Modifier le statut'}
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">Type</label>
+                <p>{selectedRapport.type}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">Référence</label>
+                <p>{selectedRapport.reference}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">Date</label>
+                <p>{selectedRapport.date ? new Date(selectedRapport.date).toLocaleDateString('fr-FR') : '-'}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">Client/Fournisseur</label>
+                <p>{selectedRapport.client}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">Montant</label>
+                <p className="font-semibold">{formatAr(selectedRapport.montant)}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">Statut</label>
+                {modalMode === 'view' ? (
+                  <Badge variant={selectedRapport.statut === 'paye' || selectedRapport.statut === 'termine' || selectedRapport.statut === 'livre' ? 'success' : selectedRapport.statut === 'annule' ? 'destructive' : 'secondary'}>
+                    {selectedRapport.statut}
+                  </Badge>
+                ) : (
+                  <Select value={editForm.statut || ''} onChange={(e) => setEditForm((prev: any) => ({ ...prev, statut: e.target.value }))}>
+                    <option value="en_attente">En attente</option>
+                    <option value="en_cours">En cours</option>
+                    <option value="paye">Payé</option>
+                    <option value="termine">Terminé</option>
+                    <option value="livre">Livré</option>
+                    <option value="annule">Annulé</option>
+                  </Select>
+                )}
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            {modalMode === 'edit' ? (
+              <>
+                <Button variant="outline" onClick={closeModal} disabled={saving}>Annuler</Button>
+                <Button onClick={handleSaveEdit} disabled={saving}>
+                  {saving ? 'Enregistrement...' : 'Enregistrer'}
+                </Button>
+              </>
+            ) : (
+              <Button variant="outline" onClick={closeModal}>Fermer</Button>
+            )}
+          </ModalFooter>
+        </Modal>
+      )}
     </>
   );
 }
