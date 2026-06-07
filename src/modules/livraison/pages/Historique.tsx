@@ -40,7 +40,7 @@ interface ClientStat {
   totalFrais: number;
 }
 
-export const Historique = () => {
+export default function Historique() {
   const { livraisons, agents, showToast, updateLivraison: onUpdateLivraison, deleteLivraison: onDeleteLivraison } = useApp();
   const { currentCompany } = useCompany();
   const logoUrl = currentCompany?.logo_url ? String(currentCompany.logo_url) : null;

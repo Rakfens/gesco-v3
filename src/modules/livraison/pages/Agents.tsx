@@ -17,7 +17,7 @@ interface RecupCumul {
   count: number;
 }
 
-export const Agents = () => {
+export default function Agents() {
   const { agents, addAgent: onAddAgent, updateAgent: onUpdateAgent, deleteAgent: onDeleteAgent, showToast } = useApp();
   const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768);
 

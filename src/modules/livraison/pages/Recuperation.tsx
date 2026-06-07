@@ -13,7 +13,7 @@ interface RecupParLivreur {
   totalGain: number;
 }
 
-export const Recuperation = () => {
+export default function Recuperation() {
   const { agents, showToast } = useApp();
   const agentsList: Agent[] = agents as unknown as Agent[];
   const [recuperations, setRecuperations] = useState<RecupType[]>([]);

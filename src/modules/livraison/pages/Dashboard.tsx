@@ -31,7 +31,7 @@ interface RecupParLivreur {
   details: { client: string; frais: number }[];
 }
 
-export const Dashboard = () => {
+export default function Dashboard() {
   const { agents, livraisons } = useApp();
   const { currentCompany } = useCompany();
   const commissionGerant = COMMISSION_DEFAUT;

@@ -19,7 +19,7 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-export const Gerant = () => {
+export default function Gerant() {
   const { livraisons, showToast } = useApp();
   const commissionGerant = COMMISSION_DEFAUT;
 

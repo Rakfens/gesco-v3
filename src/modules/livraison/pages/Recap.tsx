@@ -30,7 +30,7 @@ interface AgentStats extends Agent {
   nbRecuperations: number;
 }
 
-export const Recap = () => {
+export default function Recap() {
   const { livraisons, avances, agents, showToast, addAvance: onAddAvance, deleteAvance: onDeleteAvance } = useApp();
   const { currentCompany } = useCompany();
   const commissionGerant = COMMISSION_DEFAUT;
