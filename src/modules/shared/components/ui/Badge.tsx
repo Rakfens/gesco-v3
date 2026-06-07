@@ -1,72 +1,53 @@
-// ui/Badge.tsx — Badge/Tag professionnel
+// ui/Badge.tsx — Badge moderne
 import React from 'react';
 
-export type BadgeVariant = 'default' | 'primary' | 'success' | 'danger' | 'warning' | 'info' | 'purple';
-type BadgeSize = 'sm' | 'md' | 'lg';
-
-const variantStyles: Record<BadgeVariant, { bg: string; color: string; border: string }> = {
-  default: { bg: 'var(--bg2)', color: 'var(--text2)', border: '1px solid var(--border)' },
-  primary: { bg: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid transparent' },
-  success: { bg: 'var(--green-dim)', color: 'var(--green)', border: '1px solid transparent' },
-  danger:  { bg: 'var(--red-dim)', color: 'var(--red)', border: '1px solid transparent' },
-  warning: { bg: 'var(--orange-dim)', color: 'var(--orange)', border: '1px solid transparent' },
-  info:    { bg: 'var(--blue-dim)', color: 'var(--blue)', border: '1px solid transparent' },
-  purple:  { bg: 'var(--purple-dim)', color: 'var(--purple)', border: '1px solid transparent' },
-};
-
-const sizeStyles: Record<BadgeSize, { padding: string; fontSize: number }> = {
-  sm: { padding: '1px 7px', fontSize: 10 },
-  md: { padding: '3px 9px', fontSize: 11 },
-  lg: { padding: '4px 12px', fontSize: 12 },
-};
+type BadgeVariant = 'default' | 'primary' | 'success' | 'danger' | 'warning' | 'info' | 'purple';
 
 interface BadgeProps {
   children: React.ReactNode;
   variant?: BadgeVariant;
-  size?: BadgeSize;
+  size?: 'sm' | 'md';
   dot?: boolean;
   style?: React.CSSProperties;
-  className?: string;
 }
 
+const variantStyles: Record<BadgeVariant, { bg: string; text: string; dot: string }> = {
+  default: { bg: 'var(--bg-tertiary)', text: 'var(--text-secondary)', dot: 'var(--text-muted)' },
+  primary: { bg: 'var(--accent-light)', text: 'var(--accent)', dot: 'var(--accent)' },
+  success: { bg: 'var(--success-light)', text: 'var(--success)', dot: 'var(--success)' },
+  danger:  { bg: 'var(--danger-light)', text: 'var(--danger)', dot: 'var(--danger)' },
+  warning: { bg: 'var(--warning-light)', text: 'var(--warning)', dot: 'var(--warning)' },
+  info:    { bg: 'var(--info-light)', text: 'var(--info)', dot: 'var(--info)' },
+  purple:  { bg: 'var(--purple-light)', text: 'var(--purple)', dot: 'var(--purple)' },
+};
+
 export const Badge: React.FC<BadgeProps> = ({
-  children,
-  variant = 'default',
-  size = 'md',
-  dot = false,
-  style = {},
-  className,
+  children, variant = 'default', size = 'sm', dot = false, style = {},
 }) => {
   const v = variantStyles[variant];
-  const s = sizeStyles[size];
+  const padding = size === 'sm' ? '3px 8px' : '4px 10px';
+  const fontSize = size === 'sm' ? 11 : 12;
 
   return (
-    <span
-      className={className}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 4,
-        ...s,
-        background: v.bg,
-        color: v.color,
-        border: v.border,
-        borderRadius: 100,
-        fontWeight: 600,
-        whiteSpace: 'nowrap',
-        ...style,
-      }}
-    >
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      padding, borderRadius: 'var(--radius-full)',
+      background: v.bg, color: v.text,
+      fontSize, fontWeight: 600,
+      lineHeight: 1,
+      ...style,
+    }}>
       {dot && (
         <span style={{
           width: 5, height: 5, borderRadius: '50%',
-          background: 'currentColor',
-          flexShrink: 0,
+          background: v.dot, flexShrink: 0,
         }} />
       )}
       {children}
     </span>
   );
 };
+
+export type { BadgeVariant };
 
 export default Badge;

@@ -1,55 +1,122 @@
-// ui/Card.tsx — Carte professionnelle avec sous-composants
+// ui/Card.tsx — Carte moderne avec ombres subtiles
 import React from 'react';
 
 interface CardProps {
   children: React.ReactNode;
   padding?: number;
   style?: React.CSSProperties;
-  onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
   className?: string;
+  hover?: boolean;
+  onClick?: () => void;
 }
 
-export const Card: React.FC<CardProps> = ({ children, padding = 18, style = {}, onClick, className }) => (
+export const Card: React.FC<CardProps> = ({
+  children, padding = 20, style = {}, className, hover = false, onClick,
+}) => (
   <div
-    onClick={onClick}
     className={className}
+    onClick={onClick}
     style={{
       background: 'var(--card)',
       border: '1px solid var(--border)',
-      borderRadius: 12,
+      borderRadius: 'var(--radius-lg)',
       padding,
       boxShadow: 'var(--shadow-sm)',
-      transition: 'box-shadow 0.15s ease',
+      transition: 'all var(--transition)',
       cursor: onClick ? 'pointer' : 'default',
       ...style,
     }}
-    onMouseEnter={onClick ? (e: React.MouseEvent<HTMLDivElement>) => { e.currentTarget.style.boxShadow = 'var(--shadow)'; } : undefined}
-    onMouseLeave={onClick ? (e: React.MouseEvent<HTMLDivElement>) => { e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; } : undefined}
+    onMouseEnter={e => {
+      if (hover) {
+        (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)';
+        (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)';
+      }
+    }}
+    onMouseLeave={e => {
+      if (hover) {
+        (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-sm)';
+        (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
+      }
+    }}
   >
     {children}
   </div>
 );
 
-export interface CardSubComponentProps {
+// Section header pour les pages
+interface SectionHeaderProps {
+  title: string;
+  subtitle?: string;
+  action?: React.ReactNode;
+}
+
+export const SectionHeader: React.FC<SectionHeaderProps> = ({ title, subtitle, action }) => (
+  <div style={{
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    marginBottom: 20, flexWrap: 'wrap', gap: 12,
+  }}>
+    <div>
+      <h2 style={{
+        fontSize: 18, fontWeight: 700, color: 'var(--text)',
+        letterSpacing: '-0.01em', margin: 0,
+      }}>{title}</h2>
+      {subtitle && (
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{subtitle}</p>
+      )}
+    </div>
+    {action}
+  </div>
+);
+
+// CardHeader — en-tête de carte
+interface CardHeaderProps {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
 }
 
-export const CardHeader: React.FC<CardSubComponentProps> = ({ children, className, style }) => (
-  <div className={className} style={{ marginBottom: 12, ...style }}>{children}</div>
+export const CardHeader: React.FC<CardHeaderProps> = ({ children, className, style = {} }) => (
+  <div className={className} style={{
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    marginBottom: 12, ...style,
+  }}>{children}</div>
 );
 
-export const CardTitle: React.FC<CardSubComponentProps> = ({ children, className, style }) => (
-  <div className={className} style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', ...style }}>{children}</div>
+// CardTitle — titre de carte
+interface CardTitleProps {
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+export const CardTitle: React.FC<CardTitleProps> = ({ children, className, style = {} }) => (
+  <h3 className={className} style={{
+    fontSize: 14, fontWeight: 700, color: 'var(--text)',
+    margin: 0, letterSpacing: '-0.01em', ...style,
+  }}>{children}</h3>
 );
 
-export const CardContent: React.FC<CardSubComponentProps> = ({ children, className, style }) => (
-  <div className={className} style={style}>{children}</div>
+// CardContent — contenu de carte
+interface CardContentProps {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}
+
+export const CardContent: React.FC<CardContentProps> = ({ children, style = {} }) => (
+  <div style={style}>{children}</div>
 );
 
-export const CardFooter: React.FC<CardSubComponentProps> = ({ children, className, style }) => (
-  <div className={className} style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)', ...style }}>{children}</div>
+// CardFooter — pied de carte
+interface CardFooterProps {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}
+
+export const CardFooter: React.FC<CardFooterProps> = ({ children, style = {} }) => (
+  <div style={{
+    marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)',
+    display: 'flex', justifyContent: 'flex-end', gap: 8, ...style,
+  }}>{children}</div>
 );
 
 export default Card;

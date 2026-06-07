@@ -1,47 +1,65 @@
-export function Skeleton({ width = '100%', height = 14, style }: { width?: string | number; height?: string | number; style?: React.CSSProperties }) {
-  return (
-    <div style={{
+// ui/Skeleton.tsx — Composants de chargement
+import React from 'react';
+
+interface SkeletonProps {
+  width?: number | string;
+  height?: number | string;
+  circle?: boolean;
+  style?: React.CSSProperties;
+}
+
+export const Skeleton: React.FC<SkeletonProps> = ({
+  width = '100%', height = 14, circle = false, style = {},
+}) => (
+  <div
+    className="skeleton"
+    style={{
       width, height,
-      background: 'var(--bg2)',
-      borderRadius: 6,
-      backgroundImage: 'linear-gradient(90deg, var(--bg) 0%, var(--border) 50%, var(--bg) 100%)',
-      backgroundSize: '200% 100%',
-      animation: 'shimmer 1.5s infinite',
+      borderRadius: circle ? '50%' : 'var(--radius-sm)',
       ...style,
-    }} />
-  );
-}
+    }}
+  />
+);
 
-export function SkeletonCard() {
-  return (
-    <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 18 }}>
-      <Skeleton width="40%" height={14} style={{ marginBottom: 12 }} />
-      <Skeleton width="80%" height={28} style={{ marginBottom: 12 }} />
-      <Skeleton width="60%" height={14} />
-    </div>
-  );
-}
+export const SkeletonCard: React.FC = () => (
+  <div style={{
+    background: 'var(--card)', border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-lg)', padding: 20, boxShadow: 'var(--shadow-sm)',
+  }}>
+    <Skeleton height={10} width="40%" style={{ marginBottom: 12 }} />
+    <Skeleton height={24} width="60%" style={{ marginBottom: 8 }} />
+    <Skeleton height={10} width="80%" />
+  </div>
+);
 
-export function SkeletonGrid({ cols = 4, rows = 1 }: { cols?: number; rows?: number }) {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 12 }}>
-      {Array(cols * rows).fill(0).map((_, i) => (
-        <div key={i} style={{ height: 80, borderRadius: 12, background: 'var(--border)', opacity: 0.5 }} />
-      ))}
+export const SkeletonTable: React.FC<{ rows?: number }> = ({ rows = 5 }) => (
+  <div>
+    <div style={{ display: 'flex', gap: 12, marginBottom: 12, padding: '0 8px' }}>
+      <Skeleton height={12} width={120} />
+      <Skeleton height={12} width={100} />
+      <Skeleton height={12} width={80} />
+      <Skeleton height={12} width={100} />
     </div>
-  );
-}
+    {Array.from({ length: rows }).map((_, i) => (
+      <div key={i} style={{
+        display: 'flex', gap: 12, padding: '12px 8px',
+        borderBottom: '1px solid var(--border)',
+      }}>
+        <Skeleton height={12} width={120} />
+        <Skeleton height={12} width={100} />
+        <Skeleton height={12} width={80} />
+        <Skeleton height={12} width={100} />
+      </div>
+    ))}
+  </div>
+);
 
-export function SkeletonTable({ rows = 4, columns = 3 }: { rows?: number; columns?: number }) {
-  return (
-    <div style={{ background: 'var(--card)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden' }}>
-      {Array(rows).fill(0).map((_, i) => (
-        <div key={i} style={{ padding: '12px 14px', borderBottom: i < rows - 1 ? '1px solid var(--border)' : 'none', display: 'flex', gap: 12 }}>
-          {Array(columns).fill(0).map((_, j) => (
-            <Skeleton key={j} width={j === 0 ? '40%' : '20%'} height={14} />
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
+export const SkeletonGrid: React.FC<{ cols?: number; rows?: number }> = ({ cols = 4, rows = 1 }) => (
+  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 12 }}>
+    {Array.from({ length: cols * rows }).map((_, i) => (
+      <SkeletonCard key={i} />
+    ))}
+  </div>
+);
+
+export default Skeleton;

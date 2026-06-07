@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, ReactNode } from 'react';
+import { useState, useCallback, ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabase';
@@ -12,7 +12,7 @@ import { NAV_CONFIG } from '@/modules/shared/components/layout/navConfig';
 import { getCompanyMeta, getLogoSrc } from '@/modules/shared/components/layout/company';
 import { CompanySheet } from '@/modules/shared/components/layout/CompanySheet';
 import {
-  MoonIcon, SunIcon, LogoutIcon, ChevronDownIcon, MenuIcon, LockIcon,
+  MoonIcon, SunIcon, LogoutIcon, ChevronDownIcon, MenuIcon,
   NavIcons, type NavIconKey,
 } from '@/modules/shared/components/ui/Icons';
 
@@ -23,7 +23,6 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const { currentCompany, companies, switchCompany } = useCompany();
-  console.log('[LAYOUT] currentCompany:', currentCompany?.name, 'companies:', companies?.length);
   const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
@@ -46,160 +45,249 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: 'var(--bg)', fontFamily: 'var(--font)' }}>
+    <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-secondary)', fontFamily: 'var(--font)' }}>
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 30, background: 'rgba(0,0,0,0.5)' }}
-          className="lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 30, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
-      {/* Sidebar */}
+      {/* ─── Sidebar ─── */}
       <aside style={{
         position: isMobile ? 'fixed' : 'static',
         ...(isMobile ? { inset: '0 auto 0 0', zIndex: 40 } : {}),
-        display: 'flex', flexDirection: 'column', width: 256,
-        background: 'var(--card)', borderRight: '1px solid var(--border)',
+        display: 'flex', flexDirection: 'column',
+        width: 'var(--sidebar-w)',
+        background: 'var(--sidebar-bg)',
         transform: isMobile
           ? (sidebarOpen ? 'translateX(0)' : 'translateX(-100%)')
           : 'none',
-        transition: 'transform 0.2s',
+        transition: 'transform 0.25s cubic-bezier(0.4,0,0.2,1)',
+        flexShrink: 0,
       }} className={isMobile && !sidebarOpen ? 'sidebar-mobile-hide' : ''}>
-        {/* Sidebar header */}
+
+        {/* Sidebar brand */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          height: 64, padding: '0 16px', borderBottom: '1px solid var(--border)',
+          height: 'var(--header-h)', padding: '0 20px',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
-              width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-              background: meta.bg, color: meta.color,
+              width: 34, height: 34, borderRadius: 'var(--radius-md)',
+              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 10, fontWeight: 800,
+              fontSize: 13, fontWeight: 800, color: '#fff',
+              boxShadow: '0 2px 8px rgba(59,130,246,0.3)',
             }}>
-              {meta.icon}
+              G
             </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {currentCompany?.name || 'HT-GesCom'}
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', letterSpacing: '-0.01em' }}>
+                GesCo
               </div>
-              <div style={{ fontSize: 10, color: meta.color }}>{meta.label}</div>
+              <div style={{ fontSize: 10, color: 'var(--sidebar-text)', marginTop: -1 }}>Gestion Commerciale</div>
             </div>
           </div>
-          {companies?.length > 1 && (
-            <button onClick={() => setSheetOpen(true)} style={{
-              display: 'flex', alignItems: 'center', gap: 4,
-              padding: '4px 8px', borderRadius: 6,
-              background: meta.bg, border: 'none', cursor: 'pointer',
-              color: meta.color, fontSize: 11, fontWeight: 500,
-            }}>
-              <ChevronDownIcon />
-            </button>
-          )}
         </div>
 
-        {/* Nav */}
-        <nav style={{ flex: 1, overflowY: 'auto', padding: '16px 12px' }}>
-          {navItems.map(item => (
-            <Link key={item.href} href={item.href} onClick={() => setSidebarOpen(false)}
+        {/* Company selector in sidebar */}
+        {currentCompany && (
+          <div style={{ padding: '12px 16px' }}>
+            <button
+              onClick={() => setSheetOpen(true)}
               style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '10px 12px', borderRadius: 8,
-                fontSize: 14, fontWeight: 500,
-                textDecoration: 'none',
-                marginBottom: 4,
-                transition: 'background 0.15s',
-                ...(isActive(item.href)
-                  ? { background: 'var(--accent)', color: '#fff' }
-                  : { color: 'var(--text2)' }),
+                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 12px', borderRadius: 'var(--radius-md)',
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                cursor: 'pointer', transition: 'background var(--transition-fast)',
+              }}
+            >
+              <div style={{
+                width: 32, height: 32, borderRadius: 'var(--radius-sm)',
+                background: meta.bg || 'rgba(255,255,255,0.1)',
+                color: meta.color || '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 700, flexShrink: 0,
               }}>
-              {NavIcons[item.icon as NavIconKey]?.()}
-              {item.label}
-            </Link>
-          ))}
+                {meta.icon}
+              </div>
+              <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {currentCompany.name}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--sidebar-text)' }}>{meta.label}</div>
+              </div>
+              {companies?.length > 1 && (
+                <span style={{ color: 'var(--sidebar-text)', flexShrink: 0, display: 'flex' }}>
+                  <ChevronDownIcon />
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* Navigation */}
+        <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 12px' }}>
+          {navItems.map(item => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setSidebarOpen(false)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 14px', borderRadius: 'var(--radius-md)',
+                  fontSize: 13, fontWeight: 500,
+                  textDecoration: 'none',
+                  marginBottom: 2,
+                  transition: 'all var(--transition-fast)',
+                  position: 'relative',
+                  ...(active
+                    ? { background: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active)' }
+                    : { color: 'var(--sidebar-text)' }),
+                }}
+                onMouseEnter={e => {
+                  if (!active) {
+                    (e.currentTarget as HTMLElement).style.background = 'var(--sidebar-hover)';
+                    (e.currentTarget as HTMLElement).style.color = '#e2e8f0';
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!active) {
+                    (e.currentTarget as HTMLElement).style.background = 'transparent';
+                    (e.currentTarget as HTMLElement).style.color = 'var(--sidebar-text)';
+                  }
+                }}
+              >
+                {active && (
+                  <div style={{
+                    position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
+                    width: 3, height: 16, borderRadius: '0 3px 3px 0',
+                    background: 'var(--accent)',
+                  }} />
+                )}
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20 }}>
+                  {NavIcons[item.icon as NavIconKey]?.()}
+                </span>
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Sidebar footer */}
         <div style={{
-          borderTop: '1px solid var(--border)', padding: '12px 16px',
-          fontSize: 10, color: 'var(--muted)',
-          display: 'flex', alignItems: 'center', gap: 6,
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          padding: '14px 20px',
         }}>
-          <LockIcon />
-          Donnees securisees - v3.0
+          <button
+            onClick={handleLogout}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '8px 12px', borderRadius: 'var(--radius-md)',
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+              color: 'var(--sidebar-text)', fontSize: 12, fontWeight: 500,
+              cursor: 'pointer', width: '100%',
+              transition: 'all var(--transition-fast)',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.15)';
+              (e.currentTarget as HTMLElement).style.color = '#f87171';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239,68,68,0.2)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--sidebar-text)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+            }}
+          >
+            <LogoutIcon />
+            Déconnexion
+          </button>
         </div>
       </aside>
 
-      {/* Main area */}
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+      {/* ─── Main area ─── */}
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minWidth: 0 }}>
         {/* Header */}
         <header style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          height: 'var(--header-h)', padding: '0 16px',
-          background: 'var(--card)', borderBottom: '1px solid var(--border)',
-          position: 'sticky', top: 0, zIndex: 100, gap: 12,
+          height: 'var(--header-h)', padding: '0 24px',
+          background: 'var(--bg)',
+          borderBottom: '1px solid var(--border)',
+          position: 'sticky', top: 0, zIndex: 50, gap: 12,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {isMobile && (
               <button type="button" onClick={() => setSidebarOpen(true)} style={{
-                background: 'none', border: 'none', color: 'var(--text2)', cursor: 'pointer', padding: 4,
+                background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 4, display: 'flex',
               }}>
                 <MenuIcon />
               </button>
             )}
-            <div style={{
-              width: 38, height: 38, borderRadius: 10, overflow: 'hidden',
-              border: '1px solid var(--border)', background: 'var(--card2)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              {!logoError
-                ? <img src={logoSrc} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} onError={() => setLogoError(true)} />
-                : <span style={{ fontSize: 11, fontWeight: 800, color: meta.color }}>{meta.icon}</span>
-              }
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {currentCompany?.name || 'HT-GesCom'}
-                </span>
-                {companies?.length > 0 && (
-                  <button onClick={() => setSheetOpen(true)} style={{
-                    display: 'flex', alignItems: 'center', gap: 4,
-                    padding: '3px 8px', borderRadius: 100,
-                    background: meta.bg, border: `1px solid ${meta.color}20`,
-                    color: meta.color, cursor: 'pointer',
-                    fontSize: 10, fontWeight: 600, flexShrink: 0,
-                  }}>
-                    {meta.label}
-                    {companies.length > 1 && <ChevronDownIcon />}
-                  </button>
-                )}
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>Aterinay Services</div>
+            {/* Breadcrumb-like title */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)' }}>
+              <span>{currentCompany?.name || 'GesCo'}</span>
+              <span style={{ color: 'var(--text-faint)' }}>/</span>
+              <span style={{ color: 'var(--text)', fontWeight: 600 }}>
+                {navItems.find(i => isActive(i.href))?.label || 'Tableau de bord'}
+              </span>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-            <button onClick={toggleTheme} title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'} style={{
-              width: 36, height: 36, border: '1px solid var(--border)', borderRadius: 8,
-              background: 'var(--card)', color: 'var(--text2)', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
+
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+              style={{
+                width: 36, height: 36,
+                border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
+                background: 'var(--bg)', color: 'var(--text-secondary)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all var(--transition-fast)',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background = 'var(--bg-tertiary)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background = 'var(--bg)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
+              }}
+            >
               {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
             </button>
-            <button onClick={handleLogout} title="Deconnexion" style={{
-              width: 36, height: 36, border: '1px solid var(--border)', borderRadius: 8,
-              background: 'var(--card)', color: 'var(--muted)', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            <div style={{
+              width: 1, height: 24, background: 'var(--border)', margin: '0 4px',
+            }} />
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '6px 12px 6px 6px', borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border)',
+              background: 'var(--bg)',
             }}>
-              <LogoutIcon />
-            </button>
+              <div style={{
+                width: 28, height: 28, borderRadius: 'var(--radius-sm)',
+                background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 700, color: '#fff',
+              }}>
+                A
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>Admin</span>
+            </div>
           </div>
         </header>
 
         {/* Content */}
         <main style={{
           flex: 1, overflow: 'auto',
-          padding: isMobile ? undefined : 24,
-          background: 'var(--bg)',
+          padding: isMobile ? undefined : 28,
+          background: 'var(--bg-secondary)',
         }} className={isMobile ? 'mobile-main' : ''}>
           {children}
         </main>
