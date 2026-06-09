@@ -82,7 +82,7 @@ export const STATUTS: Record<string, StatutEntry> = {
   livre: { label: "Livré", color: "#34d399", bg: "#14532d" },
   retourne: { label: "Retourné", color: "#f87171", bg: "#450a0a" },
   reporte: { label: "Reporté", color: "#a78bfa", bg: "#2e1065" },
-  province: { label: "Province", color: "#60a5fa", bg: "#1e3a5f" },
+  province: { label: "Province", color: "#a78bfa", bg: "#1e3a5f" },
 };
 
 // Liste des statuts pour les sélecteurs
@@ -94,7 +94,7 @@ export const STATUTS_LIST: Array<{ value: string; label: string }> = Object.entr
 export const STATUTS_VENTE: Record<string, StatutVenteEntry> = {
   en_attente: { label: "En attente", color: "#f59e0b", bg: "#451a03" },
   paye: { label: "Payé", color: "#34d399", bg: "#14532d" },
-  credit: { label: "Crédit", color: "#60a5fa", bg: "#1e3a5f" },
+  credit: { label: "Crédit", color: "#a78bfa", bg: "#1e3a5f" },
   annule: { label: "Annulé", color: "#f87171", bg: "#450a0a" },
 };
 
@@ -102,7 +102,7 @@ export const STATUTS_VENTE: Record<string, StatutVenteEntry> = {
 export const STATUTS_ACHAT: Record<string, StatutVenteEntry> = {
   en_attente: { label: "En attente", color: "#f59e0b", bg: "#451a03" },
   recu: { label: "Reçu", color: "#34d399", bg: "#14532d" },
-  paye: { label: "Payé", color: "#60a5fa", bg: "#1e3a5f" },
+  paye: { label: "Payé", color: "#a78bfa", bg: "#1e3a5f" },
   annule: { label: "Annulé", color: "#f87171", bg: "#450a0a" },
 };
 
@@ -120,7 +120,7 @@ export const PAIE_MODES_LIST: Array<{ value: string; label: string; icon: string
 export const TYPES_MOUVEMENT_STOCK: Record<string, MouvementStockEntry> = {
   entree: { label: "Entrée", icon: "📥", color: "#10b981" },
   sortie: { label: "Sortie", icon: "📤", color: "#ef4444" },
-  vente: { label: "Vente", icon: "💰", color: "#3b82f6" },
+  vente: { label: "Vente", icon: "💰", color: "#c9a9f6" },
   achat: { label: "Achat", icon: "🛒", color: "#8b5cf6" },
   inventaire: { label: "Inventaire", icon: "📋", color: "#f59e0b" },
   ajustement: { label: "Ajustement", icon: "⚙️", color: "#6b7280" },
@@ -190,7 +190,7 @@ export const COMPANY_CONFIG: Record<string, CompanyModuleConfig> = {
   service: {
     name: "Service de livraison",
     icon: "🚚",
-    primaryColor: "#3b82f6",
+    primaryColor: "#c9a9f6",
     modules: ["livraisons", "agents", "avances", "recuperations", "gerant", "historique"],
   },
   pomanay: {

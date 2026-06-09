@@ -2,7 +2,7 @@
 
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
-type ThemeMode = "dark" | "light";
+type ThemeMode = "dark";
 
 interface ThemeContextValue {
   theme: ThemeMode;
@@ -24,12 +24,12 @@ export const useTheme = (): ThemeContextValue => {
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<ThemeMode>(() => {
-    if (typeof window === "undefined") return "light";
+    if (typeof window === "undefined") return "dark";
     try {
-      const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-      return savedTheme === "dark" ? "dark" : "light";
+      const saved = localStorage.getItem(THEME_STORAGE_KEY);
+      return (saved as ThemeMode) || "dark";
     } catch {
-      return "light";
+      return "dark";
     }
   });
 
@@ -38,12 +38,13 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem(THEME_STORAGE_KEY, theme);
       document.documentElement.setAttribute("data-theme", theme);
     } catch {
-      // noop
+      /* noop */
     }
   }, [theme]);
 
+  /* Toggle is a no-op now, but keep it for API compat */
   const toggleTheme = useCallback(() => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+    setTheme((prev) => (prev === "dark" ? "dark" : "dark"));
   }, []);
 
   const setThemeMode = useCallback((mode: ThemeMode) => {

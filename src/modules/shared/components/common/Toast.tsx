@@ -100,7 +100,7 @@ export const Toast = ({ toast, onClose, duration = 3500 }: ToastProps) => {
       case "success":
         return { bg: "#f0fdf4", border: "#bbf7d0", color: "#166534", icon: "#16a34a" };
       case "info":
-        return { bg: "#eff6ff", border: "#bfdbfe", color: "#1e40af", icon: "#2563eb" };
+        return { bg: "#eff6ff", border: "#bfdbfe", color: "#1e40af", icon: "#7c3aed" };
       default:
         return { bg: "#f0fdf4", border: "#bbf7d0", color: "#166534", icon: "#16a34a" };
     }

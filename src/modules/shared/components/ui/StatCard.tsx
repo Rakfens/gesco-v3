@@ -17,7 +17,7 @@ const colorMap = {
   blue: {
     bg: "var(--accent-light)",
     text: "var(--accent)",
-    gradient: "linear-gradient(135deg, #3b82f6, #2563eb)",
+    gradient: "linear-gradient(135deg, #c9a9f6, #7c3aed)",
   },
   green: {
     bg: "var(--success-light)",
