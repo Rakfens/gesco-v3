@@ -38,7 +38,7 @@ export default function FactureTemplatePage() {
       setCurrentCompany(company);
       loadVentes();
     }
-  }, [loadVentes]);
+  }, []);
 
   const loadVentes = async () => {
     if (!currentCompany) return;

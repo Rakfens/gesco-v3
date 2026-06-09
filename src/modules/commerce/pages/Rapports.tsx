@@ -219,7 +219,7 @@ export default function Rapports() {
 
   useEffect(() => {
     if (currentCompany) loadReports();
-  }, [currentCompany, loadReports]);
+  }, [currentCompany]);
 
   const loadReports = async () => {
     if (!currentCompany) return;

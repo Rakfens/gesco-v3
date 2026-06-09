@@ -84,11 +84,7 @@ export default function Depenses() {
     };
     window.addEventListener("supabase_realtime", handler);
     return () => window.removeEventListener("supabase_realtime", handler);
-  }, [
-    // Ecouter les changements sur la table 'depenses'
-    loadDepenses,
-  ]); // Important: dépendance pour le cleanup si currentCompany change
-  // --- FIN DE L'AJOUT ---
+  }, []);
 
   const loadDepenses = useCallback(async () => {
     if (!currentCompany) return;
@@ -113,11 +109,11 @@ export default function Depenses() {
     } finally {
       setLoading(false);
     }
-  }, [currentCompany, filterCat, filterDebut, filterFin, showError, calcStats]);
+  }, [currentCompany, filterCat, filterDebut, filterFin, showError]);
 
   useEffect(() => {
     loadDepenses();
-  }, [loadDepenses]);
+  }, []);
 
   const calcStats = (list: Depense[]) => {
     const t = new Date().toISOString().split("T")[0];

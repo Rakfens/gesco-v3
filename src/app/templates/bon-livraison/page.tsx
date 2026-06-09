@@ -72,7 +72,7 @@ export default function BonLivraisonPage() {
       setCurrentCompany(company);
       loadData();
     }
-  }, [loadData]);
+  });
 
   const loadData = async () => {
     if (!currentCompany) return;

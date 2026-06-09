@@ -72,7 +72,7 @@ export default function Achats() {
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  });
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -80,7 +80,7 @@ export default function Achats() {
     };
     window.addEventListener("supabase_realtime", handler);
     return () => window.removeEventListener("supabase_realtime", handler);
-  }, [loadData]);
+  });
 
   const loadData = async () => {
     if (!currentCompany) return;

@@ -47,7 +47,7 @@ export default function Recuperation() {
 
   useEffect(() => {
     loadRecuperations();
-  }, [loadRecuperations]);
+  }, []);
 
   const loadRecuperations = async () => {
     setLoading(true);

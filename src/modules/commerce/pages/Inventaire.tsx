@@ -65,7 +65,7 @@ export default function Inventaire() {
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  });
 
   // --- AJOUT DE LA GESTION REALTIME ---
   useEffect(() => {
@@ -80,13 +80,7 @@ export default function Inventaire() {
     };
     window.addEventListener("supabase_realtime", handler);
     return () => window.removeEventListener("supabase_realtime", handler);
-  }, [
-    // Recharger les données pertinentes
-    // Si l'inventaire en cours est affecté, rechargez-le
-    // Sinon, rechargez l'historique ou les produits si nécessaire
-    loadData,
-  ]); // Important: dépendance pour le cleanup si currentCompany change
-  // --- FIN DE L'AJOUT ---
+  }, []);
 
   const loadData = async () => {
     setLoading(true);

@@ -48,23 +48,16 @@ export default function ProduitsPage() {
     unite: "piece",
   });
 
-  useEffect(() => {
-    const company = getCurrentCompany();
-    if (company) {
-      setCurrentCompany(company);
-      fetchProduits();
-    }
-  }, [fetchProduits]);
-
-  const fetchProduits = useCallback(async () => {
-    if (!currentCompany) return;
+  const fetchProduits = useCallback(async (company?: Company | null) => {
+    const target = company ?? currentCompany;
+    if (!target) return;
     setLoading(true);
     setError(null);
     try {
       const { data, error } = await getSupabase()
         .from("produits")
         .select("*")
-        .eq("company_id", currentCompany.id)
+        .eq("company_id", target.id)
         .order("nom");
       if (error) throw error;
       setProduits(data || []);
@@ -75,6 +68,14 @@ export default function ProduitsPage() {
       setLoading(false);
     }
   }, [currentCompany]);
+
+  useEffect(() => {
+    const company = getCurrentCompany();
+    if (company) {
+      setCurrentCompany(company);
+      fetchProduits(company);
+    }
+  }, [fetchProduits]);
 
   const resetForm = () => {
     setFormData({

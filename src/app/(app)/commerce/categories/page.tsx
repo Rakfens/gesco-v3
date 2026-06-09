@@ -35,6 +35,7 @@ export default function CategoriesPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ nom: "", description: "" });
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const fetchCategories = useCallback(async () => {
     const company = getCurrentCompany();
@@ -50,7 +51,10 @@ export default function CategoriesPage() {
       if (error) throw error;
       setCategories(data || []);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Erreur lors du chargement des catégories";
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Erreur lors du chargement des catégories";
       setError(msg);
       setCategories([]);
     } finally {
@@ -90,26 +94,32 @@ export default function CategoriesPage() {
           .eq("company_id", company.id);
         if (error) throw error;
       } else {
-        const { error } = await getSupabase().from("categories").insert(payload);
+        const { error } = await getSupabase()
+          .from("categories")
+          .insert(payload);
         if (error) throw error;
       }
       resetForm();
       setShowModal(false);
       fetchCategories();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Erreur lors de l'enregistrement";
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Erreur lors de l'enregistrement";
       setError(msg);
     }
   };
 
   const handleEdit = (cat: Category) => {
-    setFormData({ nom: cat.nom || "", description: cat.description || "" });
+    setFormData({
+      nom: cat.nom || "",
+      description: cat.description || "",
+    });
     setIsEditing(true);
     setEditingId(cat.id);
     setShowModal(true);
   };
-
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const handleDelete = async () => {
     if (!confirmDelete) return;
@@ -126,7 +136,10 @@ export default function CategoriesPage() {
       if (error) throw error;
       fetchCategories();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Erreur lors de la suppression";
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Erreur lors de la suppression";
       setError(msg);
     }
   };
@@ -145,10 +158,18 @@ export default function CategoriesPage() {
       <Card style={{ marginBottom: 20 }}>
         <CardHeader>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--text)" }}>
+            <h1
+              style={{ fontSize: 22, fontWeight: 800, color: "var(--text)" }}
+            >
               Gestion des Catégories
             </h1>
-            <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 4 }}>
+            <p
+              style={{
+                fontSize: 13,
+                color: "var(--muted)",
+                marginTop: 4,
+              }}
+            >
               {categories.length} catégorie(s)
             </p>
           </div>
@@ -187,7 +208,11 @@ export default function CategoriesPage() {
         }}
       >
         <ModalHeader
-          title={isEditing ? "Modifier la catégorie" : "Nouvelle Catégorie"}
+          title={
+            isEditing
+              ? "Modifier la catégorie"
+              : "Nouvelle Catégorie"
+          }
           onClose={() => {
             resetForm();
             setShowModal(false);
@@ -198,13 +223,20 @@ export default function CategoriesPage() {
             <Input
               label="Nom *"
               value={formData.nom}
-              onChange={(e) => setFormData((p) => ({ ...p, nom: e.target.value }))}
+              onChange={(e) =>
+                setFormData((p) => ({ ...p, nom: e.target.value }))
+              }
               required
             />
             <Input
               label="Description"
               value={formData.description}
-              onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
+              onChange={(e) =>
+                setFormData((p) => ({
+                  ...p,
+                  description: e.target.value,
+                }))
+              }
               placeholder="Optionnel"
             />
           </ModalBody>
@@ -219,18 +251,29 @@ export default function CategoriesPage() {
             >
               Annuler
             </Button>
-            <Button type="submit">{isEditing ? "Mettre à jour" : "Enregistrer"}</Button>
+            <Button type="submit">
+              {isEditing ? "Mettre à jour" : "Enregistrer"}
+            </Button>
           </ModalFooter>
         </form>
       </Modal>
 
       {loading ? (
         <Card padding={48}>
-          <div style={{ textAlign: "center", color: "var(--muted)" }}>Chargement...</div>
+          <div
+            style={{ textAlign: "center", color: "var(--muted)" }}
+          >
+            Chargement...
+          </div>
         </Card>
       ) : categories.length === 0 ? (
         <Card padding={48}>
-          <div style={{ textAlign: "center", color: "var(--muted)" }}>
+          <div
+            style={{
+              textAlign: "center",
+              color: "var(--muted)",
+            }}
+          >
             Aucune catégorie trouvée.
           </div>
         </Card>
@@ -241,20 +284,42 @@ export default function CategoriesPage() {
               <TableRow>
                 <TableHeader>Nom</TableHeader>
                 <TableHeader>Description</TableHeader>
-                <TableHeader align="right">Actions</TableHeader>
+                <TableHeader align="right">
+                  Actions
+                </TableHeader>
               </TableRow>
             </TableHead>
             <TableBody>
               {categories.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell style={{ fontWeight: 600 }}>{c.nom}</TableCell>
-                  <TableCell>{c.description || "—"}</TableCell>
+                  <TableCell style={{ fontWeight: 600 }}>
+                    {c.nom}
+                  </TableCell>
+                  <TableCell>
+                    {c.description || "—"}
+                  </TableCell>
                   <TableCell align="right">
-                    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                      <Button variant="secondary" size="sm" onClick={() => handleEdit(c)}>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        justifyContent: "flex-end",
+                      }}
+                    >
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleEdit(c)}
+                      >
                         Modifier
                       </Button>
-                      <Button variant="danger" size="sm" onClick={() => setConfirmDelete(c.id)}>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() =>
+                          setConfirmDelete(c.id)
+                        }
+                      >
                         Supprimer
                       </Button>
                     </div>

@@ -73,7 +73,7 @@ export default function DevisTemplatePage() {
       setCurrentCompany(company);
       loadData();
     }
-  }, [loadData]);
+  });
 
   const loadData = async () => {
     if (!currentCompany) return;
