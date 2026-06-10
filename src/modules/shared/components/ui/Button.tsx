@@ -31,25 +31,25 @@ const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
     background: "var(--accent)",
     color: "#fff",
     border: "1px solid transparent",
-    boxShadow: "0 1px 2px rgba(59,130,246,0.15), 0 1px 3px rgba(59,130,246,0.1)",
+    boxShadow: "0 2px 8px rgba(127,232,254,0.25)",
   },
   success: {
     background: "var(--success)",
     color: "#fff",
     border: "1px solid transparent",
-    boxShadow: "0 1px 2px rgba(16,185,129,0.15)",
+    boxShadow: "0 2px 8px rgba(85,239,196,0.25)",
   },
   danger: {
     background: "var(--danger)",
     color: "#fff",
     border: "1px solid transparent",
-    boxShadow: "0 1px 2px rgba(239,68,68,0.15)",
+    boxShadow: "0 2px 8px rgba(255,107,107,0.25)",
   },
   warning: {
     background: "var(--warning)",
-    color: "#fff",
+    color: "var(--text)",
     border: "1px solid transparent",
-    boxShadow: "0 1px 2px rgba(245,158,11,0.15)",
+    boxShadow: "0 2px 8px rgba(253,235,113,0.25)",
   },
   secondary: {
     background: "var(--bg-tertiary)",
@@ -63,8 +63,8 @@ const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
   },
   outline: {
     background: "transparent",
-    color: "var(--accent)",
-    border: "1px solid var(--border-strong)",
+    color: "var(--cyan-dark)",
+    border: "1.5px solid var(--border)",
   },
 };
 
