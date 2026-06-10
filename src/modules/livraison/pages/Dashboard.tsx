@@ -74,7 +74,7 @@ function StatusButtons({ livraison, onUpdate }: { livraison: Livraison; onUpdate
 }
 
 export default function Dashboard() {
-  const { agents = [], livraisons = [], showToast } = useApp();
+  const { agents = [], livraisons = [], showToast, updateLivraison: onUpdateLivraison } = useApp();
   const { currentCompany } = useCompany();
   const commissionGerant = COMMISSION_DEFAUT;
   const isMobile = useIsMobile();
@@ -108,8 +108,7 @@ export default function Dashboard() {
 
   const handleStatusUpdate = async (id: string, statut: string) => {
     try {
-      const { updateLivraison } = useApp();
-      await updateLivraison(id, { statut });
+      await onUpdateLivraison(id, { statut });
       showToast(`Statut: ${STATUS_OPTIONS.find((s) => s.key === statut)?.label || statut}`);
     } catch {
       showToast("Erreur mise à jour", "error");
