@@ -52,30 +52,111 @@ const STATUS_OPTIONS = [
   { key: "reporte", label: "Reporté", color: "var(--accent2)", bg: "var(--accent2-light)", activeBg: "rgba(139,92,246,0.2)", icon: "xmark" },
 ];
 
-function StatusButtons({ livraison, onUpdate }: { livraison: Livraison; onUpdate: (id: string, statut: string) => void }) {
+function StatusButtons({ livraison, onUpdate }: { livraison: Livraison; onUpdate: (id: string, statut: string, remarque?: string) => void }) {
+  const [showRemarque, setShowRemarque] = useState(false);
+  const [remarque, setRemarque] = useState(livraison.remarque || "");
+  const needsRemarque = livraison.statut === "retourne" || livraison.statut === "reporte";
+
+  const handleClick = (key: string) => {
+    if (key === "retourne" || key === "reporte") {
+      setShowRemarque(true);
+      onUpdate(livraison.id, key, remarque);
+    } else {
+      setShowRemarque(false);
+      onUpdate(livraison.id, key);
+    }
+  };
+
+  const handleRemarqueSubmit = () => {
+    if (needsRemarque && remarque.trim()) {
+      onUpdate(livraison.id, livraison.statut || "retourne", remarque);
+    }
+  };
+
   return (
-    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-      {STATUS_OPTIONS.map((opt) => {
-        const isActive = livraison.statut === opt.key;
-        return (
-          <button
-            key={opt.key}
-            onClick={() => onUpdate(livraison.id, opt.key)}
-            title={opt.label}
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {STATUS_OPTIONS.map((opt) => {
+          const isActive = livraison.statut === opt.key;
+          return (
+            <button
+              key={opt.key}
+              onClick={() => handleClick(opt.key)}
+              title={opt.label}
+              style={{
+                width: 36, height: 36, borderRadius: "var(--radius-md)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                border: isActive ? `1.5px solid ${opt.color}` : "1.5px solid var(--border)",
+                background: isActive ? opt.activeBg : "var(--card)",
+                color: isActive ? opt.color : "var(--text-muted)",
+                cursor: "pointer", transition: "all var(--transition-fast)",
+                boxShadow: isActive ? `0 0 12px ${opt.color}33` : "none",
+              }}
+            >
+              <StatusIcon name={opt.icon} size={15} color={isActive ? opt.color : "var(--text-muted)"} />
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Champ remarque pour Retourné / Reporté */}
+      {(showRemarque || needsRemarque) && (
+        <div style={{
+          width: "100%",
+          background: "var(--bg-secondary)",
+          borderRadius: "var(--radius-md)",
+          padding: 10,
+          border: "1px solid var(--border)",
+          animation: "fadeUp 0.2s ease",
+        }}>
+          <div style={{
+            fontSize: 10, fontWeight: 700, color: "var(--text-muted)",
+            textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6,
+          }}>
+            {livraison.statut === "retourne" ? "Motif du retour" : "Motif du report"}
+          </div>
+          <textarea
+            value={remarque}
+            onChange={(e) => setRemarque(e.target.value)}
+            placeholder={livraison.statut === "retourne" ? "Ex: Client injoignable, Adresse incorrecte..." : "Ex: Reporté au lendemain, Véhicule en panne..."}
             style={{
-              width: 36, height: 36, borderRadius: "var(--radius-md)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              border: isActive ? `1.5px solid ${opt.color}` : "1.5px solid var(--border)",
-              background: isActive ? opt.activeBg : "var(--card)",
-              color: isActive ? opt.color : "var(--text-muted)",
-              cursor: "pointer", transition: "all var(--transition-fast)",
-              boxShadow: isActive ? `0 0 12px ${opt.color}33` : "none",
+              width: "100%", minHeight: 60, padding: "8px 10px",
+              background: "var(--card)", border: "1px solid var(--border)",
+              borderRadius: "var(--radius-sm)", color: "var(--text)",
+              fontSize: 12, fontFamily: "var(--font)", outline: "none",
+              resize: "vertical", boxSizing: "border-box",
             }}
-          >
-            <StatusIcon name={opt.icon} size={15} color={isActive ? opt.color : "var(--text-muted)"} />
-          </button>
-        );
-      })}
+            onBlur={handleRemarqueSubmit}
+          />
+          <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+            <button
+              onClick={() => {
+                onUpdate(livraison.id, livraison.statut || "retourne", remarque);
+                setShowRemarque(false);
+              }}
+              style={{
+                flex: 1, padding: "6px 12px", borderRadius: "var(--radius-sm)",
+                background: "var(--accent)", color: "#08080c",
+                border: "none", fontSize: 11, fontWeight: 600,
+                cursor: "pointer", fontFamily: "var(--font)",
+              }}
+            >
+              Enregistrer
+            </button>
+            <button
+              onClick={() => setShowRemarque(false)}
+              style={{
+                padding: "6px 12px", borderRadius: "var(--radius-sm)",
+                background: "transparent", color: "var(--text-muted)",
+                border: "1px solid var(--border)", fontSize: 11, fontWeight: 600,
+                cursor: "pointer", fontFamily: "var(--font)",
+              }}
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -115,10 +196,13 @@ export default function Dashboard() {
     return safeLivraisons.filter((l) => l.date && l.date.startsWith(fm));
   }, [safeLivraisons]);
 
-  const handleStatusUpdate = async (id: string, statut: string) => {
+  const handleStatusUpdate = async (id: string, statut: string, remarque?: string) => {
     try {
-      await onUpdateLivraison(id, { statut });
-      showToast(`Statut: ${STATUS_OPTIONS.find((s) => s.key === statut)?.label || statut}`);
+      const updates: Record<string, unknown> = { statut };
+      if (remarque !== undefined) updates.remarque = remarque;
+      await onUpdateLivraison(id, updates);
+      const label = STATUS_OPTIONS.find((s) => s.key === statut)?.label || statut;
+      showToast(remarque ? `${label} — motif enregistré` : `Statut: ${label}`);
     } catch {
       showToast("Erreur mise à jour", "error");
     }
