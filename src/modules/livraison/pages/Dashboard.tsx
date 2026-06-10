@@ -375,6 +375,10 @@ export default function Dashboard() {
   const totalLivraisons = safeLivraisons.length;
   const totalLivres = safeLivraisons.filter((l) => l.statut === "livre").length;
   const todayLivres = todayLivraisons.filter((l) => l.statut === "livre").length;
+  const todayRetournes = todayLivraisons.filter((l) => l.statut === "retourne").length;
+  const todayReportes = todayLivraisons.filter((l) => l.statut === "reporte").length;
+  const todayMontant = todayLivraisons.reduce((s, l) => s + (Number(l.montant) || 0), 0);
+  const monthMontant = selectedMonthLivraisons.reduce((s, l) => s + (Number(l.montant) || 0), 0);
 
   return (
     <div className="fadeUp" style={{ animation: "fadeUp 0.4s ease both" }}>
@@ -384,21 +388,20 @@ export default function Dashboard() {
         border: "1px solid var(--border)",
         borderRadius: "var(--radius-xl)",
         padding: isMobile ? "20px 16px" : "28px 32px",
-        marginBottom: 28,
+        marginBottom: 24,
         position: "relative",
         overflow: "hidden",
       }}>
-        {/* Decorative glow */}
         <div style={{
           position: "absolute", top: -40, right: -40, width: 160, height: 160,
           background: "radial-gradient(circle, rgba(201,169,110,0.12) 0%, transparent 70%)",
           borderRadius: "50%", pointerEvents: "none",
         }} />
         <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12 }}>
             <div style={{
               width: 48, height: 48, borderRadius: "var(--radius-lg)",
-              background: "linear-gradient(135deg, var(--accent), var(--accent2))",
+              background: "linear-gradient(135deg, #c9a96e, #8b5cf6)",
               display: "flex", alignItems: "center", justifyContent: "center",
               boxShadow: "0 4px 20px rgba(201,169,110,0.2)",
             }}>
@@ -413,6 +416,22 @@ export default function Dashboard() {
               </p>
             </div>
           </div>
+          {/* Quick stats in header */}
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            {[
+              { label: "Aujourd'hui", value: `${todayLivraisons.length} livraison${todayLivraisons.length !== 1 ? "s" : ""}`, color: "#c9a96e" },
+              { label: "Montant du jour", value: formatAr(todayMontant), color: "#34d399" },
+              { label: "Taux réussite", value: `${totalLivraisons ? Math.round((totalLivres / totalLivraisons) * 100) : 0}%`, color: "#34d399" },
+            ].map((q) => (
+              <div key={q.label} style={{
+                padding: "8px 14px", borderRadius: "var(--radius-full)",
+                background: `${q.color}10`, border: `1px solid ${q.color}25`,
+              }}>
+                <span style={{ fontSize: 11, color: "var(--text-muted)", marginRight: 6 }}>{q.label}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: q.color }}>{q.value}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -420,31 +439,31 @@ export default function Dashboard() {
       <div style={{
         display: "grid",
         gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)",
-        gap: 14, marginBottom: 28,
+        gap: 14, marginBottom: 24,
       }}>
         <StatCard
           label="Total livraisons"
           value={totalLivraisons}
-          color="var(--accent)"
-          icon={<Icon d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" size={18} color="var(--accent)" />}
+          color="#c9a96e"
+          icon={<Icon d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" size={18} color="#c9a96e" />}
         />
         <StatCard
           label="En cours"
           value={enCours}
-          color="var(--warning)"
-          icon={<Icon d="M12 2a10 10 0 100 20 10 10 0 000-20zM12 6v6l4 2" size={18} color="var(--warning)" />}
+          color="#fbbf24"
+          icon={<Icon d="M12 2a10 10 0 100 20 10 10 0 000-20zM12 6v6l4 2" size={18} color="#fbbf24" />}
         />
         <StatCard
           label="Livrés aujourd'hui"
           value={todayLivres}
-          color="var(--success)"
-          icon={<Icon d="M20 6L9 17l-5-5" size={18} color="var(--success)" />}
+          color="#34d399"
+          icon={<Icon d="M20 6L9 17l-5-5" size={18} color="#34d399" />}
         />
         <StatCard
-          label="Taux réussite"
-          value={`${totalLivraisons ? Math.round((totalLivres / totalLivraisons) * 100) : 0}%`}
-          color="var(--success)"
-          icon={<Icon d="M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3" size={18} color="var(--success)" />}
+          label="Montant du mois"
+          value={formatAr(monthMontant)}
+          color="#a78bfa"
+          icon={<Icon d="M12 1v22M17 5H9.5a3.5 3.5 0 010-7h5a3.5 3.5 0 000 7H6M17 19h-5.5a3.5 3.5 0 010-7H19" size={18} color="#a78bfa" />}
         />
       </div>
 
@@ -564,7 +583,7 @@ export default function Dashboard() {
                     background: "var(--accent-dim)", display: "flex", alignItems: "center", justifyContent: "center",
                     flexShrink: 0,
                   }}>
-                    <Icon d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" size={16} color="var(--accent)" />
+                    <Icon d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" size={16} color="#c9a96e" />
                   </div>
                   <div style={{ flex: 1, minWidth: 160 }}>
                     <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)" }}>{l.colis}</div>
@@ -573,9 +592,9 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div style={{
-                    fontSize: 13, fontWeight: 700, color: "var(--accent)",
+                    fontSize: 13, fontWeight: 700, color: "#c9a96e",
                     whiteSpace: "nowrap", padding: "4px 10px",
-                    background: "var(--accent-dim)", borderRadius: "var(--radius-full)",
+                    background: "rgba(201,169,110,0.08)", borderRadius: "var(--radius-full)",
                   }}>
                     {l.montant ? formatAr(l.montant) : "—"}
                   </div>

@@ -28,10 +28,16 @@ const colorMap: Record<string, { bg: string; text: string; gradient: string }> =
   accent2: { bg: "var(--accent2-light)", text: "var(--accent2)", gradient: "linear-gradient(135deg, #a78bfa, #8b5cf6)" },
 };
 
+function resolveColor(color: string) {
+  if (colorMap[color]) return colorMap[color];
+  // Fallback: treat as a CSS color value
+  return { bg: `${color}18`, text: color, gradient: color };
+}
+
 export const StatCard: React.FC<StatCardProps> = ({
   title, label, value, subtitle, sub, icon, trend, color = "accent", loading = false,
 }) => {
-  const c = colorMap[color] || colorMap.accent;
+  const c = resolveColor(color);
   const subText = subtitle || sub;
   const displayTitle = title || label;
 
