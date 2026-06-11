@@ -1,4 +1,7 @@
-export const formatDate = (date: string | number | Date) =>
+// formatters.ts — Utilitaires de formatage complémentaires
+// Note: formatAr, formatDate, formatDateTime, formatNumber sont dans constants.ts
+
+export const formatDateShort = (date: string | number | Date) =>
   new Date(date).toLocaleDateString("fr-FR", {
     day: "2-digit",
     month: "2-digit",

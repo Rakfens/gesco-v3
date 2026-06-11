@@ -4,7 +4,8 @@
 // ============================================================
 
 import { describe, expect, it } from "vitest";
-import { formatCurrency, formatDate, truncate } from "../formatters";
+import { formatDate } from "../constants";
+import { formatCurrency, formatDateShort, truncate } from "../formatters";
 
 describe("formatDate", () => {
   it("formate une date ISO en format français", () => {
@@ -15,7 +16,7 @@ describe("formatDate", () => {
   });
 
   it("formate un objet Date", () => {
-    const result = formatDate(new Date(2026, 0, 15));
+    const result = formatDate(new Date(2026, 0, 15).toISOString());
     expect(result).toContain("15");
   });
 
