@@ -8,7 +8,6 @@ import {
   Select, StatCard, Table, TableBody, TableCell, TableEmpty, TableFooter, TableHead, TableHeader, TableRow,
 } from "@/modules/shared/components/ui";
 import { useApp } from "@/modules/shared/context/AppContext";
-import { useCompany } from "@/modules/shared/context/CompanyContext";
 import { useIsMobile } from "@/modules/shared/hooks/useIsMobile";
 import type { Depense } from "@/modules/shared/types";
 import { CATEGORIES_DEPENSES, formatAr } from "@/modules/shared/utils/constants";
@@ -39,8 +38,7 @@ const Icon = ({ d, size = 16, color = "currentColor" }: { d: string; size?: numb
 );
 
 export default function Depenses() {
-  const { currentCompany } = useCompany();
-  const { success: showSuccess, error: showError, warn: showWarn } = useApp();
+  const { currentCompany, success: showSuccess, error: showError, warn: showWarn } = useApp();
   const isMobile = useIsMobile();
 
   const [depenses, setDepenses] = useState<Depense[]>([]);
