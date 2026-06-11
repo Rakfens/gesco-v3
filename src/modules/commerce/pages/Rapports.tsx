@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { logger } from "@/lib/logger";
 import { getSupabase } from "@/lib/supabase";
 import {
@@ -50,7 +50,7 @@ const BarChart = ({ data, color = C.blue }: { data: Array<{ date: string; total:
               <div style={{ width: "100%", height: `${h}%`, background: color, borderRadius: "4px 4px 0 0", transition: "height 0.4s ease", minHeight: 2 }} />
             </div>
             <div style={{ fontSize: 8, color: "var(--text-muted)", marginTop: 3, textAlign: "center" }}>
-              {new Date(`${item.date}T00:00:00`).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}
+              {(() => { const d = new Date(`${item.date}T00:00:00`); return Number.isNaN(d.getTime()) ? item.date : d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }); })()}
             </div>
           </div>
         );
@@ -79,9 +79,7 @@ export default function Rapports() {
   const [topProduits, setTopProduits] = useState<Array<{ produit_nom?: string; produit?: { nom?: string }; quantite?: number; chiffre?: number }>>([]);
   const [depenses, setDepenses] = useState<Depense[]>([]);
 
-  useEffect(() => { if (currentCompany) loadReports(); }, [currentCompany]);
-
-  const loadReports = async () => {
+  const loadReports = useCallback(async () => {
     if (!currentCompany) return;
     setLoading(true); setError(null);
     try {
@@ -105,7 +103,9 @@ export default function Rapports() {
       setStats({ ca: caNum, totalVentes: ventes.length, totalAchats: achatsNum, marge, txMarge: caNum > 0 ? parseFloat(((marge / caNum) * 100).toFixed(1)) : 0, nbProduits: produits.length, alertesStock: alertes.length, totalDepenses });
     } catch (e: unknown) { logger.error("Erreur rapports:", e); setError("Erreur lors du chargement des données."); }
     finally { setLoading(false); }
-  };
+  }, [currentCompany, dateDebut, dateFin]);
+
+  useEffect(() => { loadReports(); }, [loadReports]);
 
   const handlePeriodChange = (value: string) => {
     setPeriod(value);
