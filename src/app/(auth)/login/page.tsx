@@ -190,7 +190,7 @@ export default function LoginPage() {
               justifyContent: "center",
             }}
           >
-            <span style={{ fontSize: 20, fontWeight: 800, color: "var(--accent)" }}>HT</span>
+            <img src="/logo.png" alt="HT-GesCom" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
           </div>
           <h1
             style={{
