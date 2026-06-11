@@ -8,7 +8,6 @@ import {
   SkeletonTable, StatCard, Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/modules/shared/components/ui";
 import { useApp } from "@/modules/shared/context/AppContext";
-import { useCompany } from "@/modules/shared/context/CompanyContext";
 import type { Inventaire, Produit } from "@/modules/shared/types";
 import {
   finishInventory, getCountedProducts, getCurrentInventory, getInventoryDetails,
@@ -34,8 +33,7 @@ const Icon = ({ d, size = 16, color = "currentColor" }: { d: string; size?: numb
 );
 
 export default function Inventaire() {
-  const { currentCompany } = useCompany();
-  const { success: showSuccess, error: showError, warn: showWarn } = useApp();
+  const { currentCompany, success: showSuccess, error: showError, warn: showWarn } = useApp();
 
   const [currentInventory, setCurrentInventory] = useState<Inventaire | null>(null);
   const [_products, setProducts] = useState<Produit[]>([]);
