@@ -13,10 +13,11 @@ CREATE TABLE IF NOT EXISTS packs (
 );
 
 -- Table pack_produits (liaison pack → produits avec quantités)
+-- Note: produit_id est bigint pour correspondre à la table produits
 CREATE TABLE IF NOT EXISTS pack_produits (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   pack_id UUID NOT NULL REFERENCES packs(id) ON DELETE CASCADE,
-  produit_id UUID NOT NULL REFERENCES produits(id) ON DELETE CASCADE,
+  produit_id BIGINT NOT NULL REFERENCES produits(id) ON DELETE CASCADE,
   quantite INTEGER NOT NULL DEFAULT 1,
   UNIQUE(pack_id, produit_id)
 );

@@ -25,6 +25,7 @@ export const NAV_CONFIG = {
     { key: "ventes", label: "Ventes", href: "/commerce/ventes", icon: "cash" },
     { key: "achats", label: "Achats", href: "/commerce/achats", icon: "cart" },
     { key: "stock", label: "Stock", href: "/commerce/stock", icon: "box" },
+    { key: "packs", label: "Packs", href: "/commerce/packs", icon: "package" },
     { key: "inventaire", label: "Inventaire", href: "/commerce/inventaire", icon: "list" },
     { key: "depenses", label: "Depenses", href: "/commerce/depenses", icon: "wallet" },
     { key: "rapports", label: "Rapports", href: "/commerce/rapports", icon: "document" },
