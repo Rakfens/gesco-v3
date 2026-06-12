@@ -339,7 +339,7 @@ const updateStockAfterSale = async (
 
   await createMouvementStock({
     produit_id: produitId,
-    type: "vente",
+    type: "sortie",
     quantite: quantite,
     reference_type: "vente",
     reference_id: venteId,

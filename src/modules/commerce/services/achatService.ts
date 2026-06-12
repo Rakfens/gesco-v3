@@ -269,7 +269,7 @@ const updateStockAfterPurchase = async (
 
   await createMouvementStock({
     produit_id: produitId,
-    type: "achat",
+    type: "entree",
     quantite: quantite,
     reference_type: "achat",
     reference_id: achatId,
