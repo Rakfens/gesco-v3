@@ -186,3 +186,24 @@ export interface InventaireDetail {
   statut?: string;
   notes?: string;
 }
+
+// ── PACKS ──────────────────────────────────────────────────────────────
+
+export interface PackProduit {
+  id?: string;
+  pack_id: string;
+  produit_id: string;
+  quantite: number;
+  produit?: Produit;
+}
+
+export interface Pack {
+  id: string;
+  nom: string;
+  description?: string;
+  prix: number;
+  company_id: string;
+  created_at?: string;
+  updated_at?: string;
+  produits?: PackProduit[];
+}

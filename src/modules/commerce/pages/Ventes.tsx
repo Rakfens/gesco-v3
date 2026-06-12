@@ -9,10 +9,11 @@ import {
 import { useApp } from "@/modules/shared/context/AppContext";
 import { useCompany } from "@/modules/shared/context/CompanyContext";
 import { useIsMobile } from "@/modules/shared/hooks/useIsMobile";
-import type { Produit, Vente } from "@/modules/shared/types";
+import type { Pack, Produit, Vente } from "@/modules/shared/types";
 import { formatAr } from "@/modules/shared/utils/constants";
 import { printTicketVente } from "../services/impressionService";
 import { fetchProduits } from "../services/produitService";
+import { fetchPacks, fetchPackWithProduits, isPackAvailable } from "../services/packService";
 import type { VenteDetailItem } from "../services/venteService";
 import { createVente, deleteVente, fetchVentes, fetchVenteWithDetails, updateVente } from "../services/venteService";
 
@@ -36,6 +37,7 @@ const Icon = ({ d, size = 16, color = "currentColor" }: { d: string; size?: numb
 /* ─── Types ─── */
 interface PanierItem {
   produit_id: string; nom: string; quantite: number; prix_unitaire: number; sous_total: number; stock_max?: number;
+  is_pack?: boolean; pack_id?: string; pack_nom?: string;
 }
 
 interface VenteForm {
@@ -52,12 +54,15 @@ const PAIEMENT_OPTIONS = [
   { value: "carte", label: "💳 Carte" },
 ];
 
+type ModalTab = "produits" | "packs";
+
 export default function Ventes() {
   const { currentCompany, success: toastSuccess, error: toastError, warn: toastWarn } = useApp();
   const isMobile = useIsMobile();
 
   const [ventes, setVentes] = useState<Vente[]>([]);
   const [produits, setProduits] = useState<Produit[]>([]);
+  const [packs, setPacks] = useState<Pack[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -68,33 +73,92 @@ export default function Ventes() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [printPending, setPrintPending] = useState<string | null>(null);
   const [form, setForm] = useState<VenteForm>(EMPTY_FORM);
+  const [modalTab, setModalTab] = useState<ModalTab>("produits");
+  const [packDisponible, setPackDisponible] = useState<Record<string, boolean>>({});
 
   const loadData = async () => {
     if (!currentCompany) return;
     setLoading(true);
     try {
-      const [v, p] = await Promise.all([fetchVentes(), fetchProduits({ isActive: true })]);
-      setVentes(v); setProduits(p);
+      const [v, p, pk] = await Promise.all([
+        fetchVentes(), fetchProduits({ isActive: true }), fetchPacks(),
+      ]);
+      setVentes(v); setProduits(p); setPacks(pk);
+
+      // Vérifier la disponibilité des packs
+      const dispo: Record<string, boolean> = {};
+      for (const pack of pk) {
+        dispo[pack.id] = await isPackAvailable(pack.id);
+      }
+      setPackDisponible(dispo);
     } catch (e: unknown) { logger.error("Erreur chargement:", e); toastError("Erreur lors du chargement"); }
     finally { setLoading(false); }
   };
 
   useEffect(() => { loadData(); }, []);
   useEffect(() => {
-    const handler = (e: Event) => { if (["ventes", "vente_details"].includes((e as CustomEvent)?.detail?.table)) loadData(); };
+    const handler = (e: Event) => { if (["ventes", "vente_details", "produits"].includes((e as CustomEvent)?.detail?.table)) loadData(); };
     window.addEventListener("supabase_realtime", handler);
     return () => window.removeEventListener("supabase_realtime", handler);
   }, []);
 
   const addToCart = (produit: Produit) => {
     if ((produit.quantite_stock ?? 0) <= 0) { toastWarn(`"${produit.nom}" est en rupture de stock`); return; }
-    const existing = panier.find((p) => p.produit_id === produit.id);
+    const existing = panier.find((p) => p.produit_id === produit.id && !p.is_pack);
     if (existing) {
       if (existing.quantite >= (produit.quantite_stock ?? 0) && !editMode) { toastWarn(`Stock insuffisant (${produit.quantite_stock ?? 0})`); return; }
-      setPanier(panier.map((p) => p.produit_id === produit.id ? { ...p, quantite: p.quantite + 1, sous_total: (p.quantite + 1) * p.prix_unitaire } : p));
+      setPanier(panier.map((p) => p.produit_id === produit.id && !p.is_pack ? { ...p, quantite: p.quantite + 1, sous_total: (p.quantite + 1) * p.prix_unitaire } : p));
     } else {
       setPanier([...panier, { produit_id: produit.id, nom: produit.nom, quantite: 1, prix_unitaire: produit.prix_vente || 0, sous_total: produit.prix_vente || 0, stock_max: produit.quantite_stock }]);
     }
+  };
+
+  const addPackToCart = async (pack: Pack) => {
+    const packComplet = await fetchPackWithProduits(pack.id);
+    if (!packComplet || !packComplet.produits || packComplet.produits.length === 0) {
+      toastWarn("Ce pack ne contient aucun produit");
+      return;
+    }
+
+    // Vérifier le stock pour chaque produit du pack
+    const produitsIndividuels: PanierItem[] = [];
+    for (const pp of packComplet.produits) {
+      const produit = pp.produit as Produit | undefined;
+      if (!produit) {
+        toastWarn(`Un produit du pack "${pack.nom}" n'existe plus`);
+        return;
+      }
+      if ((produit.quantite_stock ?? 0) < pp.quantite) {
+        toastWarn(`Stock insuffisant pour "${produit.nom}" (nécessaire: ${pp.quantite}, stock: ${produit.quantite_stock ?? 0})`);
+        return;
+      }
+      produitsIndividuels.push({
+        produit_id: produit.id,
+        nom: produit.nom,
+        quantite: pp.quantite,
+        prix_unitaire: 0,
+        sous_total: 0,
+        stock_max: produit.quantite_stock,
+        is_pack: true,
+        pack_id: pack.id,
+        pack_nom: pack.nom,
+      });
+    }
+
+    // Ajouter une ligne "Pack" avec le prix du pack
+    const packItem: PanierItem = {
+      produit_id: `pack_${pack.id}`,
+      nom: `📦 ${pack.nom}`,
+      quantite: 1,
+      prix_unitaire: pack.prix,
+      sous_total: pack.prix,
+      is_pack: true,
+      pack_id: pack.id,
+      pack_nom: pack.nom,
+    };
+
+    setPanier([...panier, packItem, ...produitsIndividuels]);
+    toastSuccess(`Pack "${pack.nom}" ajouté au panier`);
   };
 
   const updateCartQty = (id: string, qty: number) => {
@@ -106,15 +170,49 @@ export default function Ventes() {
     setPanier(panier.map((p) => p.produit_id === id ? { ...p, prix_unitaire: price, sous_total: p.quantite * price } : p));
   };
 
-  const resetForm = () => { setEditMode(false); setSelectedVente(null); setPanier([]); setSearchProduit(""); setForm(EMPTY_FORM); };
+  const resetForm = () => { setEditMode(false); setSelectedVente(null); setPanier([]); setSearchProduit(""); setForm(EMPTY_FORM); setModalTab("produits"); };
 
   const handleSubmit = async () => {
-    if (panier.length === 0) { toastWarn("Ajoutez au moins un produit"); return; }
-    const details = panier.map((p) => ({ produit_id: p.produit_id, quantite: p.quantite, prix_unitaire: p.prix_unitaire, sous_total: p.sous_total }));
+    if (panier.length === 0) { toastWarn("Ajoutez au moins un produit ou un pack"); return; }
+
+    // Séparer les lignes de pack (prix) des produits individuels
+    const packLines = panier.filter((p) => p.is_pack && p.produit_id.startsWith("pack_"));
+    const productLines = panier.filter((p) => !p.is_pack || (p.is_pack && !p.produit_id.startsWith("pack_")));
+
+    // Construire les details pour la vente
+    // Les lignes pack contribuent au montant mais ne sont pas dans vente_details
+    // Les produits individuels (y compris ceux des packs) sont dans vente_details
+    const details: VenteDetailItem[] = productLines.map((p) => ({
+      produit_id: p.produit_id,
+      quantite: p.quantite,
+      prix_unitaire: p.prix_unitaire,
+      sous_total: p.sous_total,
+    }));
+
+    // Calculer le montant total : somme des prix des packs + somme des produits hors pack
+    const totalPack = packLines.reduce((s, p) => s + p.sous_total, 0);
+    const totalProduits = productLines.reduce((s, p) => s + p.sous_total, 0);
+    const montantTotal = totalPack + totalProduits;
+
     setSaving(true);
     try {
-      if (editMode && selectedVente) { await updateVente(selectedVente.id, form, details); toastSuccess("Vente modifiée"); }
-      else { const nv = await createVente(form, details); toastSuccess("Vente enregistrée"); if (nv?.id) setPrintPending(nv.id); }
+      if (editMode && selectedVente) {
+        await updateVente(selectedVente.id, form, details);
+        toastSuccess("Vente modifiée");
+      } else {
+        // Créer la vente avec le montant total incluant les packs
+        const nv = await createVente({ ...form, montant_paye: form.montant_paye }, details);
+        // Ajuster le montant total si des packs sont présents
+        if (totalPack > 0) {
+          const { getSupabase } = await import("@/lib/supabase");
+          await getSupabase().from("ventes").update({
+            montant_total: montantTotal - (Number(form.remise) || 0),
+            reste_a_payer: montantTotal - (Number(form.remise) || 0) - (Number(form.montant_paye) || 0),
+          }).eq("id", nv.id);
+        }
+        toastSuccess("Vente enregistrée");
+        if (nv?.id) setPrintPending(nv.id);
+      }
       setShowModal(false); resetForm(); loadData();
     } catch (e: unknown) { logger.error("Erreur sauvegarde:", e); toastError(`Erreur : ${e instanceof Error ? e.message : "Impossible"}`); }
     finally { setSaving(false); }
@@ -148,7 +246,13 @@ export default function Ventes() {
     return produits.filter((p) => p.nom.toLowerCase().includes(q) || (p.reference || "").toLowerCase().includes(q));
   }, [produits, searchProduit]);
 
-  const totalPanier = panier.reduce((s, p) => s + p.sous_total, 0);
+  // Calculer le total du panier (lignes pack + produits)
+  const totalPanier = useMemo(() => {
+    const packTotal = panier.filter((p) => p.is_pack && p.produit_id.startsWith("pack_")).reduce((s, p) => s + p.sous_total, 0);
+    const productTotal = panier.filter((p) => !p.is_pack || (p.is_pack && !p.produit_id.startsWith("pack_"))).reduce((s, p) => s + p.sous_total, 0);
+    return packTotal + productTotal;
+  }, [panier]);
+
   const totalFinal = totalPanier - (Number(form.remise) || 0);
   const resteAPayer = totalFinal - (Number(form.montant_paye) || 0);
 
@@ -303,40 +407,110 @@ export default function Ventes() {
       <Modal open={showModal} onClose={() => { setShowModal(false); resetForm(); }} width={isMobile ? 480 : 900}>
         <ModalHeader title={editMode ? "Modifier la vente" : "Nouvelle vente"} onClose={() => { setShowModal(false); resetForm(); }} />
         <ModalBody>
+          {/* ── Onglets Produits / Packs ── */}
+          <div style={{ display: "flex", gap: 4, marginBottom: 16, background: "var(--bg-secondary)", borderRadius: 10, padding: 4 }}>
+            <button
+              onClick={() => setModalTab("produits")}
+              style={{
+                flex: 1, padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer",
+                background: modalTab === "produits" ? C.gold : "transparent",
+                color: modalTab === "produits" ? "#08080c" : "var(--text-muted)",
+                fontSize: 12, fontWeight: 600, fontFamily: "var(--font)",
+              }}
+            >
+              🛍️ Produits
+            </button>
+            <button
+              onClick={() => setModalTab("packs")}
+              style={{
+                flex: 1, padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer",
+                background: modalTab === "packs" ? C.gold : "transparent",
+                color: modalTab === "packs" ? "#08080c" : "var(--text-muted)",
+                fontSize: 12, fontWeight: 600, fontFamily: "var(--font)",
+              }}
+            >
+              📦 Packs ({packs.length})
+            </button>
+          </div>
+
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
-            {/* Colonne gauche : Produits */}
+            {/* Colonne gauche : Liste Produits ou Packs */}
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
-                🛍️ Produits
-              </div>
-              <Input placeholder="Rechercher un produit..." value={searchProduit} onChange={(e) => setSearchProduit(e.target.value)} style={{ marginBottom: 8 }} />
-              <div style={{ maxHeight: 300, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
-                {produitsFiltres.map((p) => (
-                  <button key={p.id} onClick={() => addToCart(p)} disabled={!editMode && (p.quantite_stock ?? 0) <= 0}
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px",
-                      borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg-secondary)",
-                      cursor: (p.quantite_stock ?? 0) <= 0 && !editMode ? "not-allowed" : "pointer",
-                      opacity: (p.quantite_stock ?? 0) <= 0 && !editMode ? 0.5 : 1,
-                      textAlign: "left", fontFamily: "var(--font)", fontSize: 12,
-                    }}>
-                    <div>
-                      <div style={{ fontWeight: 600, color: "var(--text)" }}>{p.nom}</div>
-                      <div style={{ fontSize: 10, color: "var(--text-muted)" }}>Stock: {p.quantite_stock} · {formatAr(p.prix_vente)}</div>
-                    </div>
-                    <span style={{ fontSize: 16, color: C.success }}>＋</span>
-                  </button>
-                ))}
-                {produitsFiltres.length === 0 && (
-                  <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 16, fontSize: 12 }}>Aucun produit trouvé</div>
-                )}
-              </div>
+              {modalTab === "produits" ? (
+                <>
+                  <Input placeholder="Rechercher un produit..." value={searchProduit} onChange={(e) => setSearchProduit(e.target.value)} style={{ marginBottom: 8 }} />
+                  <div style={{ maxHeight: 300, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+                    {produitsFiltres.map((p) => (
+                      <button key={p.id} onClick={() => addToCart(p)} disabled={!editMode && (p.quantite_stock ?? 0) <= 0}
+                        style={{
+                          display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px",
+                          borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg-secondary)",
+                          cursor: (p.quantite_stock ?? 0) <= 0 && !editMode ? "not-allowed" : "pointer",
+                          opacity: (p.quantite_stock ?? 0) <= 0 && !editMode ? 0.5 : 1,
+                          textAlign: "left", fontFamily: "var(--font)", fontSize: 12,
+                        }}>
+                        <div>
+                          <div style={{ fontWeight: 600, color: "var(--text)" }}>{p.nom}</div>
+                          <div style={{ fontSize: 10, color: "var(--text-muted)" }}>Stock: {p.quantite_stock} · {formatAr(p.prix_vente)}</div>
+                        </div>
+                        <span style={{ fontSize: 16, color: C.success }}>＋</span>
+                      </button>
+                    ))}
+                    {produitsFiltres.length === 0 && (
+                      <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 16, fontSize: 12 }}>Aucun produit trouvé</div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+                    📦 Packs disponibles
+                  </div>
+                  <div style={{ maxHeight: 300, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+                    {packs.length === 0 ? (
+                      <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 16, fontSize: 12 }}>
+                        Aucun pack créé. Créez des packs dans les paramètres.
+                      </div>
+                    ) : (
+                      packs.map((pack) => {
+                        const disponible = packDisponible[pack.id] ?? false;
+                        return (
+                          <button
+                            key={pack.id}
+                            onClick={() => !editMode && addPackToCart(pack)}
+                            disabled={!editMode && !disponible}
+                            style={{
+                              display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px",
+                              borderRadius: 8, border: `1px solid ${disponible ? C.gold : "var(--border)"}`,
+                              background: disponible ? C.goldDim : "var(--bg-secondary)",
+                              cursor: !editMode && !disponible ? "not-allowed" : "pointer",
+                              opacity: !editMode && !disponible ? 0.5 : 1,
+                              textAlign: "left", fontFamily: "var(--font)", fontSize: 12,
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontWeight: 700, color: "var(--text)" }}>📦 {pack.nom}</div>
+                              <div style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                                {pack.produits?.length || 0} produit(s) · {disponible ? "✅ Disponible" : "❌ Stock insuffisant"}
+                              </div>
+                            </div>
+                            <div style={{ textAlign: "right" }}>
+                              <div style={{ fontWeight: 700, color: C.gold }}>{formatAr(pack.prix)}</div>
+                              <div style={{ fontSize: 14, color: disponible ? C.success : C.danger }}>＋</div>
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Colonne droite : Panier + Formulaire */}
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
-                🛒 Panier ({panier.length})
+                🛒 Panier ({panier.filter((p) => p.is_pack && p.produit_id.startsWith("pack_")).length} pack(s), {panier.filter((p) => !p.is_pack || (p.is_pack && !p.produit_id.startsWith("pack_"))).length} produit(s))
               </div>
               <div style={{ maxHeight: 200, overflowY: "auto", marginBottom: 12 }}>
                 {panier.length === 0 ? (
@@ -345,16 +519,37 @@ export default function Ventes() {
                   </div>
                 ) : (
                   panier.map((p) => (
-                    <div key={p.produit_id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
+                    <div key={`${p.produit_id}_${p.is_pack ? "pack" : "prod"}`} style={{
+                      display: "flex", alignItems: "center", gap: 6, padding: "6px 0", borderBottom: "1px solid var(--border)",
+                      background: p.is_pack && p.produit_id.startsWith("pack_") ? C.goldDim : "transparent",
+                      borderRadius: p.is_pack && p.produit_id.startsWith("pack_") ? 4 : 0,
+                      paddingLeft: p.is_pack && !p.produit_id.startsWith("pack_") ? 16 : 0,
+                    }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: 11, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.nom}</div>
+                        <div style={{ fontWeight: p.is_pack && p.produit_id.startsWith("pack_") ? 700 : 600, fontSize: 11, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {p.nom}
+                          {p.is_pack && !p.produit_id.startsWith("pack_") && <span style={{ fontSize: 9, color: "var(--text-muted)", marginLeft: 4 }}>(pack)</span>}
+                        </div>
                       </div>
-                      <input type="number" min={1} value={p.quantite} onChange={(e) => updateCartQty(p.produit_id, parseInt(e.target.value) || 0)}
-                        style={{ width: 50, padding: "3px 6px", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 11, textAlign: "center", outline: "none" }} />
-                      <input type="number" value={p.prix_unitaire} onChange={(e) => updateCartPrice(p.produit_id, parseFloat(e.target.value) || 0)}
-                        style={{ width: 70, padding: "3px 6px", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 11, textAlign: "center", outline: "none" }} />
-                      <span style={{ fontSize: 11, fontWeight: 700, color: C.gold, minWidth: 60, textAlign: "right" }}>{formatAr(p.sous_total)}</span>
-                      <button onClick={() => updateCartQty(p.produit_id, 0)} style={{ width: 24, height: 24, borderRadius: 6, background: C.dangerDim, border: "1px solid rgba(248,113,113,0.2)", color: C.danger, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>✕</button>
+                      {p.is_pack && p.produit_id.startsWith("pack_") ? (
+                        <>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: C.gold, minWidth: 60, textAlign: "right" }}>{formatAr(p.prix_unitaire)}</span>
+                          <button onClick={() => {
+                            // Supprimer le pack et ses produits
+                            const newPanier = panier.filter((item) => item.pack_id !== p.pack_id);
+                            setPanier(newPanier);
+                          }} style={{ width: 24, height: 24, borderRadius: 6, background: C.dangerDim, border: "1px solid rgba(248,113,113,0.2)", color: C.danger, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>✕</button>
+                        </>
+                      ) : (
+                        <>
+                          <input type="number" min={1} value={p.quantite} onChange={(e) => updateCartQty(p.produit_id, parseInt(e.target.value) || 0)}
+                            style={{ width: 50, padding: "3px 6px", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 11, textAlign: "center", outline: "none" }} />
+                          <input type="number" value={p.prix_unitaire} onChange={(e) => updateCartPrice(p.produit_id, parseFloat(e.target.value) || 0)}
+                            style={{ width: 70, padding: "3px 6px", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 11, textAlign: "center", outline: "none" }} />
+                          <span style={{ fontSize: 11, fontWeight: 700, color: C.gold, minWidth: 60, textAlign: "right" }}>{formatAr(p.sous_total)}</span>
+                          <button onClick={() => updateCartQty(p.produit_id, 0)} style={{ width: 24, height: 24, borderRadius: 6, background: C.dangerDim, border: "1px solid rgba(248,113,113,0.2)", color: C.danger, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>✕</button>
+                        </>
+                      )}
                     </div>
                   ))
                 )}

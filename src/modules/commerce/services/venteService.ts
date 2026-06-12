@@ -108,6 +108,7 @@ export const fetchVenteWithDetails = async (id: string): Promise<VenteWithDetail
 export const createVente = async (
   venteData: VenteData,
   details: VenteDetailItem[],
+  packIds: string[] = [],
 ): Promise<Vente> => {
   const company = getCurrentCompany();
   if (!company) throw new Error("Aucune société sélectionnée");
@@ -123,6 +124,25 @@ export const createVente = async (
   const resteAPayer = montantFinal - (venteData.montant_paye || 0);
 
   const numeroFacture = await generateNumeroFacture();
+
+  // Vérifier le stock pour tous les produits (hors pack items à prix 0)
+  for (const item of details) {
+    if (item.prix_unitaire > 0) {
+      const { data: produit, error: produitError } = await getSupabase()
+        .from("produits")
+        .select("id, nom, quantite_stock")
+        .eq("id", item.produit_id)
+        .eq("company_id", company.id)
+        .single();
+
+      if (produitError) throw new Error(`Produit ${item.produit_id} non trouvé`);
+
+      const stockDisponible = produit.quantite_stock ?? 0;
+      if (stockDisponible < item.quantite) {
+        throw new Error(`Stock insuffisant pour "${produit.nom}" (disponible: ${stockDisponible}, demandé: ${item.quantite})`);
+      }
+    }
+  }
 
   const { data: vente, error: venteError } = await getSupabase()
     .from("ventes")
