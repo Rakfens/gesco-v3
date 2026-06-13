@@ -286,7 +286,7 @@ export const deleteVente = async (id: string): Promise<void> => {
   if (!vente) throw new Error("Vente non trouvée");
 
   for (const item of vente.details) {
-    await restoreStockAfterUpdate(String(item.produit_id), Number(item.quantite), id);
+    await restoreStockAfterUpdate(String(item.produit_id), Number(item.quantite) || 1, id);
   }
 
   const { error: deleteDetailsError } = await getSupabase()
