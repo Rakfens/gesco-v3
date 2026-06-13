@@ -288,8 +288,12 @@ export const deleteVente = async (id: string): Promise<void> => {
   logger.log("[DELETE VENTE] Details:", JSON.stringify(vente.details));
 
   for (const item of vente.details) {
-    logger.log(`[DELETE VENTE] Restauration: produit_id=${item.produit_id}, quantite=${item.quantite}, prix_unitaire=${item.prix_unitaire}`);
-    await restoreStockAfterUpdate(String(item.produit_id), Number(item.quantite) || 1, id);
+    try {
+      logger.log(`[DELETE VENTE] Restauration: produit_id=${item.produit_id}, quantite=${item.quantite}, prix_unitaire=${item.prix_unitaire}`);
+      await restoreStockAfterUpdate(String(item.produit_id), Number(item.quantite) || 1, id);
+    } catch (e: unknown) {
+      logger.error("[DELETE VENTE] Erreur restauration:", e);
+    }
   }
 
   const { error: deleteDetailsError } = await getSupabase()
