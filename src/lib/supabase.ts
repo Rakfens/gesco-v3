@@ -20,7 +20,6 @@ export function createClient() {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: false,
-      storageKey: "ht_gescom_auth",
     },
     realtime: {
       params: { eventsPerSecond: 5 },
