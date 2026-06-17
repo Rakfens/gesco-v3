@@ -1,59 +1,32 @@
-import { useEffect, useMemo, useState } from "react";
-import { Card, CardHeader, CardTitle, Input, Select } from "@/modules/shared/components/ui";
+// src/modules/livraison/pages/LivraisonsPage.tsx
+"use client";
+
+import { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import { Card, Input, Select } from "@/modules/shared/components/ui";
 import { useCompany } from "@/modules/shared/context/CompanyContext";
-import { useAgents } from "@/modules/shared/hooks/useAgents";
-import { useLivraisons } from "@/modules/shared/hooks/useLivraisons";
-import { useToast } from "@/modules/shared/hooks/useToast";
+import { useApp } from "@/modules/shared/context/AppContext";
 import { useIsMobile } from "@/modules/shared/hooks/useIsMobile";
 import type { Livraison } from "@/modules/shared/types";
 import { LivraisonForm } from "../components/LivraisonForm";
 import { TODAY, formatAr, STATUTS, PAIE_MODES } from "@/modules/shared/utils/constants";
-
-/* ─── Colors ─── */
-const C = {
-  gold: "#c9a96e", goldDim: "rgba(201,169,110,0.1)",
-  success: "#34d399", successDim: "rgba(52,211,153,0.1)",
-  warning: "#fbbf24", warningDim: "rgba(251,191,36,0.1)",
-  danger: "#f87171", dangerDim: "rgba(248,113,113,0.1)",
-  violet: "#8b5cf6", violetDim: "rgba(139,92,246,0.1)",
-};
-
-const statusBarColor = (statut?: string) => {
-  if (statut === "livre") return C.success;
-  if (statut === "retourne") return C.danger;
-  if (statut === "reporte") return C.violet;
-  return C.warning;
-};
-
-const StatusIcon = ({ name, size = 14, color = "currentColor" }: { name: string; size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    {name === "clock" && <><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></>}
-    {name === "check" && <polyline points="20 6 9 17 4 12" />}
-    {name === "rotate-left" && <><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 10.49-3.74" /></>}
-    {name === "xmark" && <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>}
-  </svg>
-);
-
-const Icon = ({ d, size = 16, color = "currentColor" }: { d: string; size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d={d} />
-  </svg>
-);
+import { StatusIcon, Icon } from "@/modules/shared/components/ui/Icons";
 
 const STATUS_OPTIONS = [
-  { key: "en_cours", label: "En cours", color: C.warning, icon: "clock" },
-  { key: "livre", label: "Livré", color: C.success, icon: "check" },
-  { key: "retourne", label: "Retourné", color: C.danger, icon: "rotate-left" },
-  { key: "reporte", label: "Reporté", color: C.violet, icon: "xmark" },
-];
+  { key: "en_cours", label: "En cours", icon: "clock" as const, bg: "bg-amber-500/10", text: "text-amber-400", border: "border-l-amber-400", hover: "hover:border-amber-400/50" },
+{ key: "livre", label: "Livré", icon: "check" as const, bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-l-emerald-400", hover: "hover:border-emerald-400/50" },
+{ key: "retourne", label: "Retourné", icon: "rotate-left" as const, bg: "bg-red-500/10", text: "text-red-400", border: "border-l-red-400", hover: "hover:border-red-400/50" },
+{ key: "reporte", label: "Reporté", icon: "xmark" as const, bg: "bg-violet-500/10", text: "text-violet-400", border: "border-l-violet-400", hover: "hover:border-violet-400/50" },
+] as const;
 
 type SortKey = "date" | "montant" | "statut";
 
+function getStatusConfig(statut?: string) {
+  return STATUS_OPTIONS.find((s) => s.key === statut) || STATUS_OPTIONS[0];
+}
+
 export default function LivraisonsPage() {
   const { currentCompany } = useCompany();
-  const { livraisons = [], loading, addLivraison, updateLivraison, deleteLivraison } = useLivraisons();
-  const { agents = [] } = useAgents();
-  const { showToast } = useToast();
+  const { livraisons = [], loadingLivraisons, livraisonCrud, agents = [], showToast } = useApp();
   const isMobile = useIsMobile();
 
   const [showForm, setShowForm] = useState(false);
@@ -63,14 +36,24 @@ export default function LivraisonsPage() {
   const [filterDate, setFilterDate] = useState(TODAY());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editMontant, setEditMontant] = useState("");
-  const [editRemarque, setEditRemarque] = useState("");
   const [saving, setSaving] = useState(false);
   const [sortBy, setSortBy] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const safeLivraisons = Array.isArray(livraisons) ? livraisons : [];
 
-  // Filtrer les livraisons
+  const suggestions = useMemo(() => ({
+    colisList: [...new Set(safeLivraisons.map((l) => l.colis).filter((c): c is string => !!c))],
+                                     clients: [...new Set(safeLivraisons.map((l) => l.client_donneur).filter((c): c is string => !!c))],
+                                     lieux: [...new Set(safeLivraisons.map((l) => l.destinataire_lieu).filter((c): c is string => !!c))],
+  }), [safeLivraisons]);
+
   const filtered = useMemo(() => {
     let result = safeLivraisons;
     if (filterDate) result = result.filter((l) => l.date === filterDate);
@@ -79,16 +62,15 @@ export default function LivraisonsPage() {
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter((l) =>
-        l.colis?.toLowerCase().includes(q) ||
-        l.client_donneur?.toLowerCase().includes(q) ||
-        l.destinataire?.toLowerCase().includes(q) ||
-        l.agent_nom?.toLowerCase().includes(q)
+      l.colis?.toLowerCase().includes(q) ||
+      l.client_donneur?.toLowerCase().includes(q) ||
+      l.destinataire?.toLowerCase().includes(q) ||
+      l.agent_nom?.toLowerCase().includes(q)
       );
     }
     return result;
   }, [safeLivraisons, filterDate, filterStatut, filterAgent, search]);
 
-  // Trier
   const sorted = useMemo(() => {
     const arr = [...filtered];
     arr.sort((a, b) => {
@@ -101,8 +83,32 @@ export default function LivraisonsPage() {
     return arr;
   }, [filtered, sortBy, sortDir]);
 
-  // Export CSV
-  const handleExportCSV = () => {
+  const stats = useMemo(() => {
+    const livres = filtered.filter((l) => l.statut === "livre").length;
+    return {
+      total: filtered.length,
+      livres,
+      enCours: filtered.filter((l) => l.statut === "en_cours").length,
+                        retournes: filtered.filter((l) => l.statut === "retourne").length,
+                        reportes: filtered.filter((l) => l.statut === "reporte").length,
+                        montant: filtered.reduce((s, l) => s + (Number(l.montant) || 0), 0),
+                        frais: filtered.reduce((s, l) => s + (Number(l.frais) || 0), 0),
+                        tauxLivraison: filtered.length > 0 ? Math.round((livres / filtered.length) * 100) : 0,
+    };
+  }, [filtered]);
+
+  const handleSort = useCallback((key: SortKey) => {
+    setSortBy((prev) => {
+      if (prev === key) {
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+        return prev;
+      }
+      setSortDir("desc");
+      return key;
+    });
+  }, []);
+
+  const handleExportCSV = useCallback(() => {
     const headers = ["Date", "Colis", "Donneur", "Destinataire", "Agent", "Montant", "Frais", "Statut", "Paiement"];
     const rows = sorted.map((l) => [
       l.date, l.colis, l.client_donneur, l.destinataire, l.agent_nom || "",
@@ -114,352 +120,348 @@ export default function LivraisonsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `livraisons_${filterDate || "export"}.csv`;
+    a.download = `livraisons_${filterDate || "export"}_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    requestAnimationFrame(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
     showToast("Export CSV téléchargé");
-  };
+  }, [sorted, filterDate, showToast]);
 
-  // Stats
-  const stats = useMemo(() => ({
-    total: filtered.length,
-    livres: filtered.filter((l) => l.statut === "livre").length,
-    enCours: filtered.filter((l) => l.statut === "en_cours").length,
-    retournes: filtered.filter((l) => l.statut === "retourne").length,
-    reportes: filtered.filter((l) => l.statut === "reporte").length,
-    montant: filtered.reduce((s, l) => s + (Number(l.montant) || 0), 0),
-    frais: filtered.reduce((s, l) => s + (Number(l.frais) || 0), 0),
-  }), [filtered]);
-
-  const handleStatusUpdate = async (id: string, statut: string, remarque?: string) => {
+  const handleStatusUpdate = useCallback(async (id: string, statut: string, remarque?: string) => {
     setSaving(true);
     try {
-      await updateLivraison(id, { statut, ...(remarque !== undefined ? { remarque } : {}) });
-      showToast(`Statut: ${STATUTS[statut]?.label || statut}`);
-    } catch { showToast("Erreur", "error"); }
-    finally { setSaving(false); }
-  };
+      await livraisonCrud.update(id, { statut, ...(remarque !== undefined ? { remarque } : {}) });
+      if (mountedRef.current) showToast(`Statut: ${STATUTS[statut]?.label || statut}`);
+    } catch (err) {
+      if (mountedRef.current) showToast(err instanceof Error ? err.message : "Erreur", "error");
+    } finally {
+      if (mountedRef.current) setSaving(false);
+    }
+  }, [livraisonCrud, showToast]);
 
-  const handleEditMontant = async (id: string) => {
+  const handleEditMontant = useCallback(async (id: string) => {
     if (!editMontant) return;
     setSaving(true);
     try {
-      await updateLivraison(id, { montant: parseFloat(editMontant) || 0 });
-      showToast("Montant modifié");
-      setEditingId(null);
-    } catch { showToast("Erreur", "error"); }
-    finally { setSaving(false); }
-  };
+      await livraisonCrud.update(id, { montant: parseFloat(editMontant) || 0 });
+      if (mountedRef.current) {
+        showToast("Montant modifié");
+        setEditingId(null);
+        setEditMontant("");
+      }
+    } catch (err) {
+      if (mountedRef.current) showToast(err instanceof Error ? err.message : "Erreur", "error");
+    } finally {
+      if (mountedRef.current) setSaving(false);
+    }
+  }, [editMontant, livraisonCrud, showToast]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Supprimer cette livraison ?")) return;
+  const handleDelete = useCallback(async (id: string) => {
+    if (deleteConfirmId !== id) {
+      setDeleteConfirmId(id);
+      return;
+    }
     setSaving(true);
     try {
-      await deleteLivraison(id);
-      showToast("Livraison supprimée", "warn");
-    } catch { showToast("Erreur", "error"); }
-    finally { setSaving(false); }
-  };
+      await livraisonCrud.delete(id);
+      if (mountedRef.current) {
+        showToast("Livraison supprimée", "warn");
+        setDeleteConfirmId(null);
+      }
+    } catch (err) {
+      if (mountedRef.current) showToast(err instanceof Error ? err.message : "Erreur", "error");
+    } finally {
+      if (mountedRef.current) setSaving(false);
+    }
+  }, [deleteConfirmId, livraisonCrud, showToast]);
 
-  const startEdit = (l: Livraison) => {
+  const startEdit = useCallback((l: Livraison) => {
     setEditingId(l.id);
     setEditMontant(String(l.montant || ""));
-    setEditRemarque(l.remarque || "");
-  };
+  }, []);
 
-  if (loading) {
+  const cancelEdit = useCallback(() => {
+    setEditingId(null);
+    setEditMontant("");
+  }, []);
+
+  if (loadingLivraisons) {
     return (
-      <div style={{ padding: "20px 0", textAlign: "center", color: "var(--text-muted)" }}>
-        Chargement des livraisons...
+      <div className="py-12 text-center text-[var(--text-muted)] animate-pulse">
+      Chargement des livraisons...
       </div>
     );
   }
 
   return (
-    <div className="fadeUp" style={{ animation: "fadeUp 0.4s ease both", paddingBottom: 24 }}>
+    <div className="pb-6 animate-fade-up">
+    {/* ══ HEADER ══ */}
+    <header className="mb-5">
+    <div className="flex items-center gap-2.5 mb-1">
+    <div className="w-9 h-9 rounded-[10px] flex items-center justify-center bg-amber-400/10">
+    <Icon d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" size={18} className="text-amber-400" />
+    </div>
+    <div>
+    <h1 className={`font-extrabold m-0 text-[var(--text)] ${isMobile ? "text-xl" : "text-2xl"}`}>
+    Livraisons
+    </h1>
+    <p className="text-xs text-[var(--text-muted)] mt-0.5">
+    {currentCompany?.name} · {filtered.length} livraison{filtered.length !== 1 ? "s" : ""}
+    </p>
+    </div>
+    </div>
+    </header>
 
-      {/* ══ HEADER ══ */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: C.goldDim, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Icon d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" size={18} color={C.gold} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: isMobile ? 20 : 24, fontWeight: 800, color: "var(--text)", margin: 0 }}>Livraisons</h1>
-            <p style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 1 }}>
-              {currentCompany?.name} · {filtered.length} livraison{filtered.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-        </div>
+    {/* ══ STATS RAPIDES ══ */}
+    <div className={`grid gap-2.5 mb-4 ${isMobile ? "grid-cols-2" : "grid-cols-4"}`}>
+    {[
+      { label: "Total", value: stats.total, color: "text-amber-400" },
+      { label: "Livrés", value: stats.livres, color: "text-emerald-400" },
+      { label: "En cours", value: stats.enCours, color: "text-amber-400" },
+      { label: "Montant", value: formatAr(stats.montant), color: "text-violet-400" },
+    ].map((s) => (
+      <div key={s.label} className="text-center rounded-xl border border-[var(--border)] p-3 bg-[var(--card)]">
+      <div className={`font-extrabold text-xl ${s.color}`}>{s.value}</div>
+      <div className="text-[10px] text-[var(--text-muted)] mt-0.5 uppercase tracking-wider">{s.label}</div>
       </div>
+    ))}
+    </div>
 
-      {/* ══ STATS RAPIDES ══ */}
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 10, marginBottom: 16 }}>
-        {[
-          { label: "Total", value: stats.total, color: C.gold },
-          { label: "Livrés", value: stats.livres, color: C.success },
-          { label: "En cours", value: stats.enCours, color: C.warning },
-          { label: "Montant", value: formatAr(stats.montant), color: C.violet },
-        ].map((s) => (
-          <div key={s.label} style={{ padding: "12px 14px", background: "var(--card)", borderRadius: 12, border: "1px solid var(--border)", textAlign: "center" }}>
-            <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
-            <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2, textTransform: "uppercase", letterSpacing: "0.04em" }}>{s.label}</div>
-          </div>
-        ))}
+    {/* ══ BOUTON NOUVELLE LIVRAISON ══ */}
+    <button
+    onClick={() => setShowForm((p) => !p)}
+    className={`w-full py-3.5 rounded-xl mb-4 text-sm font-bold flex items-center justify-center gap-2 cursor-pointer transition-all font-[var(--font)] ${showForm ? "bg-[var(--bg-secondary)] text-[var(--text)] border border-[var(--border)]" : "bg-gradient-to-br from-amber-400 to-amber-600 text-[#08080c] border-none"}`}
+    >
+    {showForm ? "✕ Fermer" : "＋ Nouvelle livraison"}
+    </button>
+
+    {/* ══ FORMULAIRE ══ */}
+    {showForm && (
+      <div className="mb-5 animate-fade-up">
+      <LivraisonForm
+      agents={agents}
+      onAddLivraison={async (data) => {
+        try {
+          await livraisonCrud.add(data);
+          showToast("Livraison enregistrée");
+          setShowForm(false);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Erreur lors de l'enregistrement";
+          showToast(msg, "error");
+        }
+      }}
+      showToast={showToast}
+      suggestions={suggestions}
+      />
       </div>
+    )}
 
-      {/* ══ BOUTON NOUVELLE LIVRAISON ══ */}
-      <button onClick={() => setShowForm(!showForm)}
-        style={{
-          width: "100%", padding: "14px", borderRadius: 12, marginBottom: 16,
-          background: showForm ? "var(--bg-secondary)" : `linear-gradient(135deg, ${C.gold}, #a68b4b)`,
-          color: showForm ? "var(--text)" : "#08080c",
-          border: showForm ? "1px solid var(--border)" : "none",
-          fontSize: 14, fontWeight: 700, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-          fontFamily: "var(--font)", transition: "all var(--transition-fast)",
-        }}
-      >
-        {showForm ? "✕ Fermer" : "＋ Nouvelle livraison"}
-      </button>
+    {/* ══ FILTRES ══ */}
+    <Card className="mb-4">
+    <div className={`grid gap-2.5 ${isMobile ? "grid-cols-1" : "grid-cols-4"}`}>
+    <Input type="date" label="Date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} />
+    <Select
+    label="Statut"
+    value={filterStatut}
+    onChange={(e) => setFilterStatut(e.target.value)}
+    options={[{ value: "tous", label: "Tous les statuts" }, ...STATUS_OPTIONS.map((s) => ({ value: s.key, label: s.label }))]}
+    />
+    <Select
+    label="Agent"
+    value={filterAgent}
+    onChange={(e) => setFilterAgent(e.target.value)}
+    options={[{ value: "tous", label: "Tous les agents" }, ...agents.map((a) => ({ value: a.nom, label: a.nom }))]}
+    />
+    <Input label="Rechercher" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Colis, client, destinataire..." />
+    </div>
+    </Card>
 
-      {/* ══ FORMULAIRE ══ */}
-      {showForm && (
-        <div style={{ marginBottom: 20, animation: "fadeUp 0.3s ease" }}>
-          <LivraisonForm
-            agents={agents}
-            onAddLivraison={async (data) => {
-              try {
-                await addLivraison(data);
-                showToast("Livraison enregistrée");
-                setShowForm(false);
-              } catch (err: unknown) {
-                const msg = err instanceof Error ? err.message : "Erreur";
-                showToast(msg, "error");
-              }
-            }}
-            showToast={showToast}
-            suggestions={{
-              colisList: [...new Set(safeLivraisons.map((l) => l.colis).filter((c): c is string => !!c))],
-              clients: [...new Set(safeLivraisons.map((l) => l.client_donneur).filter((c): c is string => !!c))],
-              lieux: [...new Set(safeLivraisons.map((l) => l.destinataire_lieu).filter((c): c is string => !!c))],
-            }}
-          />
-        </div>
-      )}
-
-      {/* ══ FILTRES ══ */}
-      <Card style={{ marginBottom: 16 }}>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: 10 }}>
-          <Input
-            type="date" label="Date" value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
-          />
-          <Select label="Statut" value={filterStatut} onChange={(e) => setFilterStatut(e.target.value)}
-            options={[
-              { value: "tous", label: "Tous les statuts" },
-              ...STATUS_OPTIONS.map((s) => ({ value: s.key, label: s.label })),
-            ]}
-          />
-          <Select label="Agent" value={filterAgent} onChange={(e) => setFilterAgent(e.target.value)}
-            options={[
-              { value: "tous", label: "Tous les agents" },
-              ...agents.map((a) => ({ value: a.nom, label: a.nom })),
-            ]}
-          />
-          <Input
-            label="Rechercher" value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Colis, client, destinataire..."
-          />
-        </div>
+    {/* ══ LISTE DES LIVRAISONS ══ */}
+    {filtered.length === 0 ? (
+      <Card className="py-10">
+      <div className="text-center text-sm text-[var(--text-muted)]">
+      <div className="text-3xl mb-2">📦</div>
+      {safeLivraisons.length === 0 ? "Aucune livraison enregistrée." : "Aucun résultat pour ces filtres."}
+      </div>
       </Card>
+    ) : (
+      <>
+      {/* Actions bar */}
+      <div className="flex items-center justify-between mb-2.5 flex-wrap gap-2">
+      <div className="flex gap-1.5">
+      {[
+        { key: "date" as SortKey, label: "📅 Date" },
+        { key: "montant" as SortKey, label: "💰 Montant" },
+        { key: "statut" as SortKey, label: "📊 Statut" },
+      ].map((s) => (
+        <button
+        key={s.key}
+        onClick={() => handleSort(s.key)}
+        className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer transition-all font-[var(--font)] ${sortBy === s.key ? "border-[1.5px] border-amber-400 bg-amber-400/10 text-amber-400" : "border border-[var(--border)] bg-transparent text-[var(--text-muted)]"}`}
+        >
+        {s.label} {sortBy === s.key && (sortDir === "asc" ? "↑" : "↓")}
+        </button>
+      ))}
+      </div>
+      <button
+      onClick={handleExportCSV}
+      className="px-3 py-1.5 rounded-lg text-[11px] font-semibold flex items-center gap-1 cursor-pointer border border-[var(--border)] bg-transparent text-[var(--text-muted)] font-[var(--font)] hover:text-[var(--text)] hover:border-[var(--text-muted)] transition-colors"
+      >
+      📥 Exporter CSV
+      </button>
+      </div>
 
-      {/* ══ LISTE DES LIVRAISONS ══ */}
-      {filtered.length === 0 ? (
-        <Card padding={40}>
-          <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>📦</div>
-            {safeLivraisons.length === 0 ? "Aucune livraison enregistrée." : "Aucun résultat pour ces filtres."}
+      {/* Liste */}
+      <div className="flex flex-col gap-2.5">
+      {sorted.map((l) => {
+        const isEditing = editingId === l.id;
+        const config = getStatusConfig(l.statut);
+        const paiementLabel = PAIE_MODES[l.paiement || ""]?.label || l.paiement || "—";
+        const paiementIcon = l.paiement === "espece" ? "💵" : l.paiement === "mobile_money" ? "📱" : l.paiement === "client" ? "🤝" : "💵";
+
+        return (
+          <Card key={l.id} className={`overflow-hidden border-l-4 ${config.border}`}>
+          <div className={isMobile ? "p-3" : "px-4 py-3.5"}>
+          {/* Ligne principale */}
+          <div className="flex items-center gap-3 flex-wrap">
+          {/* Icône statut */}
+          <div className={`flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-[10px] ${config.bg}`}>
+          <StatusIcon name={config.icon} size={18} className={config.text} />
           </div>
-        </Card>
-      ) : (
-        <>
-          {/* Actions bar */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
-            <div style={{ display: "flex", gap: 6 }}>
-              {[
-                { key: "date", label: "📅 Date" },
-                { key: "montant", label: "💰 Montant" },
-                { key: "statut", label: "📊 Statut" },
-              ].map((s) => (
-                <button key={s.key} onClick={() => {
-                  if (sortBy === s.key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-                  else { setSortBy(s.key as SortKey); setSortDir("desc"); }
-                }}
-                  style={{
-                    padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600,
-                    border: sortBy === s.key ? `1.5px solid ${C.gold}` : "1px solid var(--border)",
-                    background: sortBy === s.key ? C.goldDim : "transparent",
-                    color: sortBy === s.key ? C.gold : "var(--text-muted)",
-                    cursor: "pointer", fontFamily: "var(--font)",
-                  }}
-                >
-                  {s.label} {sortBy === s.key && (sortDir === "asc" ? "↑" : "↓")}
-                </button>
-              ))}
-            </div>
-            <button onClick={handleExportCSV}
-              style={{
-                padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600,
-                border: "1px solid var(--border)", background: "transparent",
-                color: "var(--text-muted)", cursor: "pointer", fontFamily: "var(--font)",
-                display: "flex", alignItems: "center", gap: 4,
-              }}
+          {/* Infos */}
+          <div className="flex-1 min-w-[140px]">
+          <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="font-bold text-sm text-[var(--text)]">{l.colis}</span>
+          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider ${config.bg} ${config.text}`}>
+          {STATUTS[l.statut || ""]?.label || l.statut || "—"}
+          </span>
+          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[var(--bg-tertiary)] text-[var(--text-muted)]">
+          {paiementIcon} {paiementLabel}
+          </span>
+          </div>
+          <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
+          {l.client_donneur || "—"} → {l.destinataire || "—"}
+          {l.agent_nom && <span className="text-[var(--accent)]"> · 🚚 {l.agent_nom}</span>}
+          </div>
+          <div className="text-[10px] text-[var(--text-faint)] mt-0.5">
+          {l.date} {l.destinataire_lieu && `· 📍 ${l.destinataire_lieu}`}
+          </div>
+          </div>
+          {/* Montant */}
+          <div className="text-right">
+          {isEditing ? (
+            <div className="flex items-center gap-1.5">
+            <input
+            type="number"
+            value={editMontant}
+            onChange={(e) => setEditMontant(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleEditMontant(l.id);
+              if (e.key === "Escape") cancelEdit();
+            }}
+            className="w-[90px] px-2 py-1.5 rounded-lg text-xs outline-none bg-[var(--card)] border border-[var(--accent)] text-[var(--text)] font-[var(--font)]"
+            autoFocus
+            />
+            <button
+            onClick={() => handleEditMontant(l.id)}
+            disabled={saving}
+            className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer border-none bg-amber-400 text-[#08080c] hover:bg-amber-500 transition-colors"
             >
-              📥 Exporter CSV
+            ✓
             </button>
-          </div>
-
-          {/* Liste */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {sorted.map((l) => {
-              const isEditing = editingId === l.id;
-              const statutColor = statusBarColor(l.statut);
-              const statutIcon = STATUS_OPTIONS.find((s) => s.key === l.statut)?.icon || "clock";
-              const paiementLabel = PAIE_MODES[l.paiement || ""]?.label || l.paiement || "—";
-              const paiementIcon = l.paiement === "espece" ? "💵" : l.paiement === "mobile_money" ? "📱" : l.paiement === "client" ? "🤝" : "💵";
-
-              return (
-                <Card key={l.id} padding={0} style={{ overflow: "hidden", borderLeft: `4px solid ${statutColor}` }}>
-                  <div style={{ padding: isMobile ? "12px" : "14px 16px" }}>
-                    {/* Ligne principale */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                      {/* Icône statut */}
-                      <div style={{
-                        width: 40, height: 40, borderRadius: 10,
-                        background: `${statutColor}15`,
-                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                      }}>
-                        <StatusIcon name={statutIcon} size={18} color={statutColor} />
-                      </div>
-
-                      {/* Infos */}
-                      <div style={{ flex: 1, minWidth: 140 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text)" }}>{l.colis}</span>
-                          <span style={{
-                            fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 99,
-                            background: `${statutColor}15`, color: statutColor, textTransform: "uppercase", letterSpacing: "0.04em",
-                          }}>
-                            {STATUTS[l.statut || ""]?.label || l.statut || "—"}
-                          </span>
-                          <span style={{
-                            fontSize: 9, padding: "2px 6px", borderRadius: 99,
-                            background: "var(--bg-tertiary)", color: "var(--text-muted)",
-                          }}>
-                            {paiementIcon} {paiementLabel}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-                          {l.client_donneur || "—"} → {l.destinataire || "—"}
-                          {l.agent_nom ? <span style={{ color: C.gold }}> · 🚚 {l.agent_nom}</span> : ""}
-                        </div>
-                        <div style={{ fontSize: 10, color: "var(--text-faint)", marginTop: 1 }}>
-                          {l.date} {l.destinataire_lieu ? `· 📍 ${l.destinataire_lieu}` : ""}
-                        </div>
-                      </div>
-
-                      {/* Montant */}
-                      <div style={{ textAlign: "right" }}>
-                        {isEditing ? (
-                          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                            <input type="number" value={editMontant} onChange={(e) => setEditMontant(e.target.value)}
-                              style={{ width: 90, padding: "5px 8px", background: "var(--card)", border: `1px solid ${C.gold}`, borderRadius: 8, color: "var(--text)", fontSize: 12, fontFamily: "var(--font)", outline: "none" }}
-                              autoFocus
-                            />
-                            <button onClick={() => handleEditMontant(l.id)} disabled={saving}
-                              style={{ padding: "5px 10px", borderRadius: 8, background: C.gold, color: "#08080c", border: "none", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓</button>
-                            <button onClick={() => setEditingId(null)}
-                              style={{ padding: "5px 10px", borderRadius: 8, background: "transparent", color: "var(--text-muted)", border: "1px solid var(--border)", fontSize: 11, cursor: "pointer" }}>✕</button>
-                          </div>
-                        ) : (
-                          <>
-                            <div style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>{l.montant ? formatAr(l.montant) : "—"}</div>
-                            {l.frais ? <div style={{ fontSize: 10, color: "var(--text-muted)" }}>Frais: {formatAr(l.frais)}</div> : null}
-                          </>
-                        )}
-                      </div>
-
-                      {/* Actions */}
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => startEdit(l)} title="Modifier"
-                          style={{ width: 32, height: 32, borderRadius: 8, background: "var(--bg-secondary)", border: "1px solid var(--border)", color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>✏️</button>
-                        <button onClick={() => handleDelete(l.id)} title="Supprimer"
-                          style={{ width: 32, height: 32, borderRadius: 8, background: C.dangerDim, border: "1px solid rgba(248,113,113,0.2)", color: C.danger, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🗑</button>
-                      </div>
-                    </div>
-
-                    {/* Remarque si présente */}
-                    {l.remarque && (
-                      <div style={{ marginTop: 8, padding: "6px 10px", background: "var(--bg)", borderRadius: 8, fontSize: 11, color: "var(--text-secondary)", borderLeft: `2px solid ${C.warning}` }}>
-                        📝 {l.remarque}
-                      </div>
-                    )}
-
-                    {/* Boutons de changement de statut */}
-                    <div style={{ display: "flex", gap: 6, marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--border)" }}>
-                      {STATUS_OPTIONS.map((opt) => {
-                        const isActive = l.statut === opt.key;
-                        return (
-                          <button key={opt.key} onClick={() => handleStatusUpdate(l.id, opt.key)} disabled={saving || isActive}
-                            style={{
-                              flex: 1, padding: "7px 4px", borderRadius: 8,
-                              border: isActive ? `2px solid ${opt.color}` : "1px solid var(--border)",
-                              background: isActive ? `${opt.color}15` : "transparent",
-                              color: isActive ? opt.color : "var(--text-muted)",
-                              fontSize: 10, fontWeight: isActive ? 700 : 500,
-                              cursor: isActive ? "default" : "pointer",
-                              display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-                              fontFamily: "var(--font)", transition: "all var(--transition-fast)",
-                              opacity: isActive ? 1 : 0.7,
-                            }}
-                          >
-                            <StatusIcon name={opt.icon} size={12} color={isActive ? opt.color : "var(--text-muted)"} />
-                            {opt.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-
-          {/* Totaux en bas */}
-          <Card style={{ marginTop: 16, padding: "14px 16px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                <div>
-                  <span style={{ fontSize: 10, color: "var(--text-muted)" }}>Montant total</span>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: C.gold }}>{formatAr(stats.montant)}</div>
-                </div>
-                <div>
-                  <span style={{ fontSize: 10, color: "var(--text-muted)" }}>Frais total</span>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: C.violet }}>{formatAr(stats.frais)}</div>
-                </div>
-                <div>
-                  <span style={{ fontSize: 10, color: "var(--text-muted)" }}>Livrés / Total</span>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: C.success }}>{stats.livres} / {stats.total}</div>
-                </div>
-              </div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                {filtered.length} résultat{filtered.length !== 1 ? "s" : ""}
-              </div>
+            <button
+            onClick={cancelEdit}
+            className="px-2.5 py-1.5 rounded-lg text-[11px] cursor-pointer border border-[var(--border)] bg-transparent text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--text-muted)] transition-colors"
+            >
+            ✕
+            </button>
             </div>
+          ) : (
+            <>
+            <div className="font-bold text-sm text-amber-400">
+            {l.montant ? formatAr(l.montant) : "—"}
+            </div>
+            {l.frais ? <div className="text-[10px] text-[var(--text-muted)]">Frais: {formatAr(l.frais)}</div> : null}
+            </>
+          )}
+          </div>
+          {/* Actions */}
+          <div className="flex gap-1.5">
+          <button
+          onClick={() => startEdit(l)}
+          title="Modifier le montant"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-sm cursor-pointer border bg-[var(--bg-secondary)] border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--text-muted)] transition-colors"
+          >
+          ✏️
+          </button>
+          <button
+          onClick={() => handleDelete(l.id)}
+          title={deleteConfirmId === l.id ? "Confirmer la suppression" : "Supprimer"}
+          className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm cursor-pointer border transition-all ${deleteConfirmId === l.id ? "bg-red-400 border-red-400 text-white" : "bg-red-50 border-red-200/50 text-red-400 hover:bg-red-100 hover:text-red-500"}`}
+          >
+          {deleteConfirmId === l.id ? "⚠️" : "🗑"}
+          </button>
+          </div>
+          </div>
+          {/* Remarque */}
+          {l.remarque && (
+            <div className="mt-2 px-2.5 py-1.5 rounded-lg text-[11px] text-[var(--text-secondary)] border-l-2 border-amber-400 bg-[var(--bg)]">
+            📝 {l.remarque}
+            </div>
+          )}
+          {/* Boutons de changement de statut */}
+          <div className="flex gap-1.5 mt-2.5 pt-2.5 border-t border-[var(--border)]">
+          {STATUS_OPTIONS.map((opt) => {
+            const isActive = l.statut === opt.key;
+            return (
+              <button
+              key={opt.key}
+              onClick={() => !isActive && handleStatusUpdate(l.id, opt.key)}
+              disabled={saving || isActive}
+              className={`flex-1 py-1.5 px-1 rounded-lg text-[10px] flex items-center justify-center gap-1 transition-all font-[var(--font)] ${isActive ? `border-2 ${opt.border.replace('border-l-', 'border-')} ${opt.bg} ${opt.text} font-bold opacity-100 cursor-default` : `border border-[var(--border)] bg-transparent text-[var(--text-muted)] opacity-70 hover:opacity-100 cursor-pointer ${opt.hover}`}`}
+              >
+              <StatusIcon name={opt.icon} size={12} className={isActive ? opt.text : "text-[var(--text-muted)]"} />
+              {opt.label}
+              </button>
+            );
+          })}
+          </div>
+          </div>
           </Card>
-        </>
-      )}
+        );
+      })}
+      </div>
+
+      {/* Totaux en bas */}
+      <Card className="mt-4 px-4 py-3.5">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex gap-4 flex-wrap">
+      <div>
+      <span className="text-[10px] text-[var(--text-muted)] block">Montant total</span>
+      <div className="font-extrabold text-lg text-amber-400">{formatAr(stats.montant)}</div>
+      </div>
+      <div>
+      <span className="text-[10px] text-[var(--text-muted)] block">Frais total</span>
+      <div className="font-extrabold text-lg text-violet-400">{formatAr(stats.frais)}</div>
+      </div>
+      <div>
+      <span className="text-[10px] text-[var(--text-muted)] block">Livrés / Total</span>
+      <div className="font-extrabold text-lg text-emerald-400">
+      {stats.livres} / {stats.total}
+      <span className="text-xs font-normal ml-1 text-[var(--text-muted)]">({stats.tauxLivraison}%)</span>
+      </div>
+      </div>
+      </div>
+      <div className="text-[11px] text-[var(--text-muted)]">
+      {filtered.length} résultat{filtered.length !== 1 ? "s" : ""}
+      </div>
+      </div>
+      </Card>
+      </>
+    )}
     </div>
   );
 }

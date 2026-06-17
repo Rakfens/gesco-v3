@@ -1,7 +1,9 @@
+// src/modules/shared/hooks/useConfirm.ts
 "use client";
 
 import { useCallback, useState } from "react";
 
+/* ─── Types ─── */
 interface ConfirmOptions {
   title: string;
   message: string;
@@ -14,7 +16,16 @@ interface ConfirmState extends ConfirmOptions {
   resolve: (value: boolean) => void;
 }
 
-export function useConfirm() {
+interface UseConfirmReturn {
+  state: ConfirmState | null;
+  confirm: (options: ConfirmOptions) => Promise<boolean>;
+  handleConfirm: () => void;
+  handleCancel: () => void;
+  isOpen: boolean;
+}
+
+/* ─── Hook ─── */
+export function useConfirm(): UseConfirmReturn {
   const [state, setState] = useState<ConfirmState | null>(null);
 
   const confirm = useCallback((options: ConfirmOptions): Promise<boolean> => {
@@ -37,5 +48,11 @@ export function useConfirm() {
     }
   }, [state]);
 
-  return { state, confirm, handleConfirm, handleCancel };
+  return {
+    state,
+    confirm,
+    handleConfirm,
+    handleCancel,
+    isOpen: !!state,
+  };
 }

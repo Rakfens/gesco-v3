@@ -1,32 +1,28 @@
-// ui/StatusBadge.tsx — Badge de statut spécialisé
-import type React from "react";
+// ui/StatusBadge.tsx — Badge de statut spécialisé (100% Tailwind pur)
 import { Badge } from "./Badge";
 
 type StatusType =
-  | "pending"
-  | "in_progress"
-  | "completed"
-  | "cancelled"
-  | "active"
-  | "inactive"
-  | "delivered"
-  | "returned"
-  | "paid"
-  | "unpaid"
-  | "partial";
+| "pending"
+| "in_progress"
+| "completed"
+| "cancelled"
+| "active"
+| "inactive"
+| "delivered"
+| "returned"
+| "paid"
+| "unpaid"
+| "partial";
 
 interface StatusBadgeProps {
   status: StatusType | string | undefined;
-  style?: React.CSSProperties;
+  className?: string;
 }
 
-const statusConfig: Record<
-  string,
-  {
-    label: string;
-    variant: "default" | "primary" | "success" | "danger" | "warning" | "info" | "purple";
-  }
-> = {
+const statusConfig: Record<string, {
+  label: string;
+  variant: "default" | "primary" | "success" | "danger" | "warning" | "info" | "purple";
+}> = {
   pending: { label: "En attente", variant: "warning" },
   in_progress: { label: "En cours", variant: "primary" },
   completed: { label: "Terminé", variant: "success" },
@@ -48,15 +44,16 @@ const statusConfig: Record<
   non_paye: { label: "Non payé", variant: "danger" },
 };
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, style }) => {
+export function StatusBadge({ status, className }: StatusBadgeProps) {
   const config = status
-    ? statusConfig[status] || { label: status, variant: "default" as const }
-    : { label: "-", variant: "default" as const };
+  ? statusConfig[status] || { label: status, variant: "default" as const }
+  : { label: "-", variant: "default" as const };
+
   return (
-    <Badge variant={config.variant} dot style={style}>
-      {config.label}
+    <Badge variant={config.variant} dot className={className}>
+    {config.label}
     </Badge>
   );
-};
+}
 
 export default StatusBadge;

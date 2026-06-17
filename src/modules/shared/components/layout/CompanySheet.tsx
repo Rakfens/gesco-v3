@@ -1,3 +1,4 @@
+// CompanySheet.tsx — 100% Tailwind pur
 import { CheckIcon } from "@/modules/shared/components/ui/Icons";
 import type { Company } from "@/modules/shared/context/CompanyContext";
 import { getCompanyMeta, getLogoSrc } from "./company";
@@ -9,115 +10,70 @@ interface CompanySheetProps {
   onClose: () => void;
 }
 
-export function CompanySheet({ companies, currentCompany, onSelect, onClose }: CompanySheetProps) {
+export function CompanySheet({
+  companies,
+  currentCompany,
+  onSelect,
+  onClose,
+}: CompanySheetProps) {
   return (
     <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.4)",
-        zIndex: 500,
-        display: "flex",
-        alignItems: "flex-end",
-        justifyContent: "center",
-      }}
+    className="fixed inset-0 z-[500] flex items-end justify-center bg-black/40 animate-fade-in"
+    onClick={onClose}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: "var(--card)",
-          width: "100%",
-          maxWidth: 480,
-          borderRadius: "18px 18px 0 0",
-          paddingBottom: "env(safe-area-inset-bottom)",
-          boxShadow: "var(--shadow-lg)",
-          animation: "fadeUp 0.25s ease",
+    <div
+    className="w-full max-w-[480px] animate-fade-up rounded-t-[18px] bg-[#121218] shadow-[0_8px_32px_rgba(0,0,0,0.6)] pb-[env(safe-area-inset-bottom)]"
+    onClick={(e) => e.stopPropagation()}
+    >
+    {/* Handle */}
+    <div className="mx-auto mt-3 h-1 w-9 rounded bg-[#2a2a32]" />
+    <div className="px-5 pb-2 pt-4 text-[13px] font-semibold text-[#6b6b7b]">
+    Choisir une société
+    </div>
+    {companies.map((company) => {
+      const meta = getCompanyMeta(company);
+      const isActive = currentCompany?.id === company.id;
+      return (
+        <button
+        key={company.id}
+        type="button"
+        onClick={() => {
+          onSelect(company);
+          onClose();
         }}
-      >
-        <div
-          style={{
-            width: 36,
-            height: 4,
-            background: "var(--border2)",
-            borderRadius: 4,
-            margin: "12px auto 0",
-          }}
-        />
-        <div
-          style={{ padding: "16px 20px 8px", fontSize: 13, fontWeight: 600, color: "var(--muted)" }}
+        className={`flex w-full items-center gap-3.5 border-b border-white/[0.06] px-5 py-3.5 transition-colors ${isActive ? "bg-amber-400/5" : "bg-transparent hover:bg-white/[0.02]"}`}
         >
-          Choisir une société
+        <div
+        className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-white/[0.08] ${meta.tailwindAvatarBg}`}
+        >
+        <img
+        src={getLogoSrc(company)}
+        alt={company.name}
+        className="h-full w-full object-contain"
+        />
         </div>
-        {companies.map((company) => {
-          const meta = getCompanyMeta(company);
-          const isActive = currentCompany?.id === company.id;
-          return (
-            <button
-              key={company.id}
-              onClick={() => {
-                onSelect(company);
-                onClose();
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                width: "100%",
-                padding: "14px 20px",
-                background: isActive ? "var(--accent-dim)" : "transparent",
-                border: "none",
-                cursor: "pointer",
-                borderBottom: "1px solid var(--border)",
-                transition: "background 0.15s ease",
-              }}
-            >
-              <div
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 10,
-                  background: meta.bg,
-                  border: `1px solid ${meta.color}25`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                  overflow: "hidden",
-                }}
-              >
-                <img src={getLogoSrc(company)} alt={company.name} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-              </div>
-              <div style={{ flex: 1, textAlign: "left" }}>
-                <div
-                  style={{ fontSize: 14, fontWeight: isActive ? 700 : 600, color: "var(--text)" }}
-                >
-                  {company.name}
-                </div>
-                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
-                  {meta.label}
-                </div>
-              </div>
-              {isActive && (
-                <div
-                  style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: "50%",
-                    background: "var(--accent)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <CheckIcon />
-                </div>
-              )}
-            </button>
-          );
-        })}
-        <div style={{ height: 12 }} />
-      </div>
+        <div className="flex-1 text-left">
+        <div
+        className={`text-sm ${isActive ? "font-bold" : "font-semibold"} text-[#e8e8ec]`}
+        >
+        {company.name}
+        </div>
+        <div className="mt-0.5 text-[11px] text-[#6b6b7b]">
+        {meta.label}
+        </div>
+        </div>
+        {isActive && (
+          <div className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-amber-400">
+          <CheckIcon size={12} strokeWidth={3} />
+          </div>
+        )}
+        </button>
+      );
+    })}
+    <div className="h-3" />
+    </div>
     </div>
   );
 }
+
+export default CompanySheet;

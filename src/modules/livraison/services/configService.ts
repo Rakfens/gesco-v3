@@ -1,84 +1,131 @@
-// configService.ts
-import { getCurrentCompany, getSupabase } from "@/lib/supabase";
+// src/modules/livraison/services/configService.ts
+import { createClient } from "@/lib/supabase";
 
-export const fetchCommission = async (): Promise<number> => {
-  const company = getCurrentCompany();
-  if (!company) return 500;
+/* ─── Helpers ─── */
+function getClient() {
+  return createClient();
+}
+
+function ensureCompanyId(companyId: string | undefined): asserts companyId is string {
+  if (!companyId) throw new Error("Aucune société sélectionnée");
+}
+
+/* ─── Commission ─── */
+export async function fetchCommission(companyId: string): Promise<number> {
+  if (!companyId) return 500;
+
   try {
-    const { data, error } = await getSupabase()
-      .from("config")
-      .select("valeur")
-      .eq("cle", "commission_gerant")
-      .eq("company_id", company.id)
-      .single();
-    if (error && error.code !== "PGRST116") throw error;
+    const { data, error } = await getClient()
+    .from("config")
+    .select("valeur")
+    .eq("cle", "commission_gerant")
+    .eq("company_id", companyId)
+    .single();
+
+    if (error && error.code !== "PGRST116") {
+      throw new Error(`Erreur fetch commission: ${error.message}`);
+    }
     return data ? Number(data.valeur) : 500;
   } catch {
     return 500;
   }
-};
+}
 
-export const updateCommission = async (newVal: number): Promise<void> => {
-  const company = getCurrentCompany();
-  if (!company) throw new Error("Aucune société sélectionnée");
-  const { error } = await getSupabase()
-    .from("config")
-    .upsert(
-      { cle: "commission_gerant", valeur: String(newVal), company_id: company.id },
-      { onConflict: "cle,company_id" },
-    );
-  if (error) throw error;
-};
+export async function updateCommission(
+  newVal: number,
+  companyId: string
+): Promise<void> {
+  ensureCompanyId(companyId);
 
-export const fetchLogo = async (): Promise<string | null> => {
-  const company = getCurrentCompany();
-  if (!company) return null;
+  const { error } = await getClient()
+  .from("config")
+  .upsert(
+    { cle: "commission_gerant", valeur: String(newVal), company_id: companyId },
+          { onConflict: "cle,company_id" }
+  );
+
+  if (error) throw new Error(`Erreur mise à jour commission: ${error.message}`);
+}
+
+/* ─── Logo ─── */
+export async function fetchLogo(companyId: string): Promise<string | null> {
+  if (!companyId) return null;
+
   try {
-    const { data, error } = await getSupabase()
-      .from("config")
-      .select("valeur")
-      .eq("cle", "logo_url")
-      .eq("company_id", company.id)
-      .single();
-    if (error && error.code !== "PGRST116") throw error;
+    const { data, error } = await getClient()
+    .from("config")
+    .select("valeur")
+    .eq("cle", "logo_url")
+    .eq("company_id", companyId)
+    .single();
+
+    if (error && error.code !== "PGRST116") {
+      throw new Error(`Erreur fetch logo: ${error.message}`);
+    }
     return data?.valeur || null;
   } catch {
     return null;
   }
-};
+}
 
-export const updateLogo = async (url: string): Promise<void> => {
-  const company = getCurrentCompany();
-  if (!company) throw new Error("Aucune société sélectionnée");
-  const { error } = await getSupabase()
-    .from("config")
-    .upsert(
-      { cle: "logo_url", valeur: url, company_id: company.id },
-      { onConflict: "cle,company_id" },
-    );
-  if (error) throw error;
-};
+export async function updateLogo(url: string, companyId: string): Promise<void> {
+  ensureCompanyId(companyId);
 
-export const uploadLogoFile = async (file: File): Promise<string> => {
-  const company = getCurrentCompany();
-  if (!company) throw new Error("Aucune société sélectionnée");
-  const fileExt = file.name.split(".").pop();
-  const fileName = `logos/${company.slug || "default"}/logo_${Date.now()}.${fileExt}`;
-  const { error: uploadError } = await getSupabase().storage.from("logos").upload(fileName, file);
-  if (uploadError) throw uploadError;
-  const { data: publicUrl } = getSupabase().storage.from("logos").getPublicUrl(fileName);
+  const { error } = await getClient()
+  .from("config")
+  .upsert(
+    { cle: "logo_url", valeur: url, company_id: companyId },
+    { onConflict: "cle,company_id" }
+  );
+
+  if (error) throw new Error(`Erreur mise à jour logo: ${error.message}`);
+}
+
+export async function uploadLogoFile(
+  file: File,
+  companyId: string,
+  slug?: string
+): Promise<string> {
+  ensureCompanyId(companyId);
+
+  const fileExt = file.name.split(".").pop()?.toLowerCase() || "png";
+  const allowedExts = ["jpg", "jpeg", "png", "webp", "svg"];
+  if (!allowedExts.includes(fileExt)) {
+    throw new Error(`Format non supporté. Utilisez: ${allowedExts.join(", ")}`);
+  }
+
+  const fileName = `logos/${slug || "default"}/logo_${Date.now()}.${fileExt}`;
+
+  const { error: uploadError } = await getClient()
+  .storage
+  .from("logos")
+  .upload(fileName, file, {
+    contentType: file.type,
+    upsert: true,
+  });
+
+  if (uploadError) throw new Error(`Erreur upload logo: ${uploadError.message}`);
+
+  const { data: publicUrl } = getClient()
+  .storage
+  .from("logos")
+  .getPublicUrl(fileName);
+
   return publicUrl.publicUrl;
-};
+}
 
-export const fetchAllConfig = async (): Promise<Record<string, string>> => {
-  const company = getCurrentCompany();
-  if (!company) return {};
+/* ─── Config générique ─── */
+export async function fetchAllConfig(companyId: string): Promise<Record<string, string>> {
+  if (!companyId) return {};
+
   try {
-    const { data, error } = await getSupabase()
-      .from("config")
-      .select("cle, valeur")
-      .eq("company_id", company.id);
-    if (error) throw error;
+    const { data, error } = await getClient()
+    .from("config")
+    .select("cle, valeur")
+    .eq("company_id", companyId);
+
+    if (error) throw new Error(`Erreur fetch config: ${error.message}`);
+
     const configMap: Record<string, string> = {};
     data?.forEach((item: { cle: string; valeur: string }) => {
       configMap[item.cle] = item.valeur;
@@ -87,33 +134,43 @@ export const fetchAllConfig = async (): Promise<Record<string, string>> => {
   } catch {
     return {};
   }
-};
+}
 
-export const getConfigValue = async (
+export async function getConfigValue(
   key: string,
-  defaultValue: string | null = null,
-): Promise<string | null> => {
-  const company = getCurrentCompany();
-  if (!company) return defaultValue;
+  companyId: string,
+  defaultValue: string | null = null
+): Promise<string | null> {
+  if (!companyId) return defaultValue;
+
   try {
-    const { data, error } = await getSupabase()
-      .from("config")
-      .select("valeur")
-      .eq("cle", key)
-      .eq("company_id", company.id)
-      .single();
+    const { data, error } = await getClient()
+    .from("config")
+    .select("valeur")
+    .eq("cle", key)
+    .eq("company_id", companyId)
+    .single();
+
     if (error && error.code !== "PGRST116") return defaultValue;
     return data?.valeur || defaultValue;
   } catch {
     return defaultValue;
   }
-};
+}
 
-export const setConfigValue = async (key: string, value: string): Promise<void> => {
-  const company = getCurrentCompany();
-  if (!company) throw new Error("Aucune société sélectionnée");
-  const { error } = await getSupabase()
-    .from("config")
-    .upsert({ cle: key, valeur: value, company_id: company.id }, { onConflict: "cle,company_id" });
-  if (error) throw error;
-};
+export async function setConfigValue(
+  key: string,
+  value: string,
+  companyId: string
+): Promise<void> {
+  ensureCompanyId(companyId);
+
+  const { error } = await getClient()
+  .from("config")
+  .upsert(
+    { cle: key, valeur: value, company_id: companyId },
+    { onConflict: "cle,company_id" }
+  );
+
+  if (error) throw new Error(`Erreur set config: ${error.message}`);
+}

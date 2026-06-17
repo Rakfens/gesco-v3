@@ -14,20 +14,9 @@ import { formatAr } from "@/modules/shared/utils/constants";
 import { createAchat, deleteAchat, fetchAchats, updateAchat } from "../services/achatService";
 import { fetchProduits } from "../services/produitService";
 
-/* ─── Colors ─── */
-const C = {
-  gold: "#c9a96e", goldDim: "rgba(201,169,110,0.1)",
-  success: "#34d399", successDim: "rgba(52,211,153,0.1)",
-  warning: "#fbbf24", warningDim: "rgba(251,191,36,0.1)",
-  danger: "#f87171", dangerDim: "rgba(248,113,113,0.1)",
-  violet: "#8b5cf6", violetDim: "rgba(139,92,246,0.1)",
-  blue: "#60a5fa", blueDim: "rgba(96,165,250,0.1)",
-  orange: "#fb923c", orangeDim: "rgba(251,146,60,0.1)",
-};
-
-const Icon = ({ d, size = 16, color = "currentColor" }: { d: string; size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d={d} />
+const Icon = ({ d, size = 16, className = "" }: { d: string; size?: number; className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+  <path d={d} />
   </svg>
 );
 
@@ -38,7 +27,6 @@ interface PanierItem {
 export default function Achats() {
   const { currentCompany, success: toastSuccess, error: toastError, warn: toastWarn } = useApp();
   const isMobile = useIsMobile();
-
   const [achats, setAchats] = useState<Achat[]>([]);
   const [produits, setProduits] = useState<Produit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +38,6 @@ export default function Achats() {
   const [searchProduit, setSearchProduit] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [fournisseursConnus, setFournisseursConnus] = useState<string[]>([]);
-
   const [form, setForm] = useState({
     fournisseur_nom: "", fournisseur_contact: "", tva: 0, montant_paye: 0, date_achat: new Date().toISOString().split("T")[0],
   });
@@ -129,7 +116,6 @@ export default function Achats() {
 
   const totalPanier = panier.reduce((s, p) => s + p.sous_total, 0);
   const totalAvecTVA = totalPanier + (Number(form.tva) || 0);
-
   const totalGeneral = useMemo(() => achats.reduce((s, a) => s + (a.montant_total || 0), 0), [achats]);
   const totalPaye = useMemo(() => achats.reduce((s, a) => s + (a.montant_paye || 0), 0), [achats]);
   const totalSolde = useMemo(() => achats.reduce((s, a) => s + Math.max(0, (a.montant_total || 0) - (a.montant_paye || 0)), 0), [achats]);
@@ -137,231 +123,232 @@ export default function Achats() {
   if (loading) return <SkeletonTable rows={6} />;
 
   return (
-    <div className="fadeUp" style={{ animation: "fadeUp 0.4s ease both", paddingBottom: 24 }}>
+    <div className="pb-6 transition-all duration-500 ease-out">
+    {/* ══ MODALS ══ */}
+    <ConfirmDialog open={!!confirmDelete} title="Supprimer cet achat ?" message="Cette action est irréversible. Le stock sera ajusté." onConfirm={executeDelete} onCancel={() => setConfirmDelete(null)} variant="danger" />
 
-      {/* ══ MODALS ══ */}
-      <ConfirmDialog open={!!confirmDelete} title="Supprimer cet achat ?" message="Cette action est irréversible. Le stock sera ajusté." onConfirm={executeDelete} onCancel={() => setConfirmDelete(null)} variant="danger" />
+    {/* ══ HEADER ══ */}
+    <div className="flex items-center justify-between mb-5 flex-wrap gap-2.5">
+    <div className="flex items-center gap-2.5">
+    <div className="w-9 h-9 rounded-[10px] bg-orange-400/10 flex items-center justify-center">
+    <Icon d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" size={18} className="text-orange-400" />
+    </div>
+    <div>
+    <h1 className={`font-extrabold m-0 ${isMobile ? "text-xl" : "text-2xl"}`}>Achats</h1>
+    <p className="text-xs text-zinc-500 mt-0.5">{currentCompany?.name} · {achats.length} commande(s)</p>
+    </div>
+    </div>
+    <Button variant="primary" onClick={() => { resetForm(); setShowModal(true); }}>＋ Nouvel achat</Button>
+    </div>
 
-      {/* ══ HEADER ══ */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: C.orangeDim, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Icon d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" size={18} color={C.orange} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: isMobile ? 20 : 24, fontWeight: 800, color: "var(--text)", margin: 0 }}>Achats</h1>
-            <p style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 1 }}>{currentCompany?.name} · {achats.length} commande(s)</p>
-          </div>
-        </div>
-        <Button variant="primary" onClick={() => { resetForm(); setShowModal(true); }}>＋ Nouvel achat</Button>
+    {/* ══ STATS ══ */}
+    {achats.length > 0 && (
+      <div className={isMobile ? "grid grid-cols-2 gap-2.5 mb-4" : "grid grid-cols-3 gap-2.5 mb-4"}>
+      <StatCard label="Total général" value={formatAr(totalGeneral)} color="orange" icon={<Icon d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" size={18} className="text-orange-400" />} />
+      <StatCard label="Total payé" value={formatAr(totalPaye)} color="emerald" icon={<Icon d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" size={18} className="text-emerald-400" />} />
+      <StatCard label="Solde restant" value={formatAr(totalSolde)} color="red" icon={<Icon d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" size={18} className="text-red-400" />} />
       </div>
+    )}
 
-      {/* ══ STATS ══ */}
-      {achats.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3, 1fr)", gap: 10, marginBottom: 16 }}>
-          <StatCard label="Total général" value={formatAr(totalGeneral)} color={C.orange} icon={<Icon d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" size={18} color={C.orange} />} />
-          <StatCard label="Total payé" value={formatAr(totalPaye)} color={C.success} icon={<Icon d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" size={18} color={C.success} />} />
-          <StatCard label="Solde restant" value={formatAr(totalSolde)} color={C.danger} icon={<Icon d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" size={18} color={C.danger} />} />
+    {/* ══ LISTE DES ACHATS ══ */}
+    {isMobile ? (
+      <div className="flex flex-col gap-2.5">
+      {achats.length === 0 ? (
+        <Card padding={40}>
+        <div className="text-center text-zinc-500 text-[13px]">
+        <div className="text-[32px] mb-2">🛒</div>
+        Aucun achat enregistré.
         </div>
-      )}
-
-      {/* ══ LISTE DES ACHATS ══ */}
-      {isMobile ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {achats.length === 0 ? (
-            <Card padding={40}>
-              <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
-                <div style={{ fontSize: 32, marginBottom: 8 }}>🛒</div>
-                Aucun achat enregistré.
-              </div>
-            </Card>
-          ) : (
-            achats.map((a) => {
-              const solde = (a.montant_total || 0) - (a.montant_paye || 0);
-              return (
-                <Card key={a.id} padding={14}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text)" }}>{a.numero_commande || "—"}</div>
-                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>{a.fournisseur_nom || "—"} · {a.date_achat ? new Date(a.date_achat).toLocaleDateString("fr-FR") : "—"}</div>
-                    </div>
-                    <Badge variant={solde > 0 ? "warning" : "success"} size="sm">{solde > 0 ? "Crédit" : "Soldé"}</Badge>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginBottom: 8 }}>
-                    {[
-                      { l: "TOTAL", v: formatAr(a.montant_total), c: C.orange },
-                      { l: "PAYÉ", v: formatAr(a.montant_paye), c: C.success },
-                      { l: "SOLDE", v: solde > 0 ? formatAr(solde) : "Payé", c: solde > 0 ? C.danger : C.success },
-                    ].map((r) => (
-                      <div key={r.l} style={{ background: "var(--bg-secondary)", borderRadius: 8, padding: "6px 8px", textAlign: "center" }}>
-                        <div style={{ fontSize: 9, color: "var(--text-muted)", marginBottom: 2 }}>{r.l}</div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: r.c }}>{r.v}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                    <Button variant="secondary" size="sm" onClick={() => handleEditAchat(a)}>✏️ Modifier</Button>
-                    <Button variant="danger" size="sm" onClick={() => setConfirmDelete(a.id)}>🗑️ Supprimer</Button>
-                  </div>
-                </Card>
-              );
-            })
-          )}
-          {achats.length > 0 && (
-            <Card padding={12}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontWeight: 700, fontSize: 12 }}>TOTAL GÉNÉRAL</span>
-                <div style={{ display: "flex", gap: 12 }}>
-                  <span style={{ color: C.orange, fontWeight: 800, fontSize: 13 }}>{formatAr(totalGeneral)}</span>
-                  <span style={{ color: C.danger, fontWeight: 700, fontSize: 12 }}>Solde: {formatAr(totalSolde)}</span>
-                </div>
-              </div>
-            </Card>
-          )}
-        </div>
+        </Card>
       ) : (
-        <Card padding={0} style={{ overflow: "hidden" }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeader>Commande</TableHeader>
-                <TableHeader>Fournisseur</TableHeader>
-                <TableHeader>Date</TableHeader>
-                <TableHeader align="right">Montant</TableHeader>
-                <TableHeader align="right">Payé</TableHeader>
-                <TableHeader align="right">Solde</TableHeader>
-                <TableHeader align="center">Statut</TableHeader>
-                <TableHeader align="center">Actions</TableHeader>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {achats.length === 0 ? (
-                <TableEmpty colSpan={8} message="Aucun achat" />
-              ) : (
-                achats.map((a) => {
-                  const solde = (a.montant_total || 0) - (a.montant_paye || 0);
-                  return (
-                    <TableRow key={a.id}>
-                      <TableCell style={{ fontWeight: 600, fontFamily: "var(--font-mono)", fontSize: 12 }}>{a.numero_commande || "—"}</TableCell>
-                      <TableCell>{a.fournisseur_nom || "—"}</TableCell>
-                      <TableCell style={{ color: "var(--text-muted)", fontSize: 11 }}>{a.date_achat ? new Date(a.date_achat).toLocaleDateString("fr-FR") : "—"}</TableCell>
-                      <TableCell align="right" style={{ fontWeight: 600, color: C.orange }}>{formatAr(a.montant_total)}</TableCell>
-                      <TableCell align="right" style={{ color: C.success }}>{formatAr(a.montant_paye)}</TableCell>
-                      <TableCell align="right" style={{ color: solde > 0 ? C.danger : C.success, fontWeight: 600 }}>{solde > 0 ? formatAr(solde) : "Payé"}</TableCell>
-                      <TableCell align="center"><Badge variant={solde > 0 ? "warning" : "success"} size="sm">{solde > 0 ? "Crédit" : "Soldé"}</Badge></TableCell>
-                      <TableCell align="center">
-                        <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
-                          <Button variant="secondary" size="sm" onClick={() => handleEditAchat(a)}>✏️</Button>
-                          <Button variant="danger" size="sm" onClick={() => setConfirmDelete(a.id)}>🗑️</Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-          {achats.length > 0 && (
-            <div style={{ padding: "12px 16px", background: "var(--bg)", borderTop: "2px solid var(--border)", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-              <span style={{ fontWeight: 700, fontSize: 12 }}>TOTAL GÉNÉRAL</span>
-              <div style={{ display: "flex", gap: 16 }}>
-                <span style={{ color: C.orange, fontWeight: 800 }}>{formatAr(totalGeneral)}</span>
-                <span style={{ color: C.success, fontWeight: 700 }}>Payé: {formatAr(totalPaye)}</span>
-                <span style={{ color: C.danger, fontWeight: 700 }}>Solde: {formatAr(totalSolde)}</span>
-              </div>
+        achats.map((a) => {
+          const solde = (a.montant_total || 0) - (a.montant_paye || 0);
+          return (
+            <Card key={a.id} padding={14}>
+            <div className="flex items-center justify-between mb-2">
+            <div>
+            <div className="font-bold text-[13px] text-white">{a.numero_commande || "—"}</div>
+            <div className="text-[11px] text-zinc-500 mt-0.5">{a.fournisseur_nom || "—"} · {a.date_achat ? new Date(a.date_achat).toLocaleDateString("fr-FR") : "—"}</div>
             </div>
-          )}
+            <Badge variant={solde > 0 ? "warning" : "success"} size="sm">{solde > 0 ? "Crédit" : "Soldé"}</Badge>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5 mb-2">
+            {[
+              { l: "TOTAL", v: formatAr(a.montant_total), color: "text-orange-400" },
+                  { l: "PAYÉ", v: formatAr(a.montant_paye), color: "text-emerald-400" },
+                  { l: "SOLDE", v: solde > 0 ? formatAr(solde) : "Payé", color: solde > 0 ? "text-red-400" : "text-emerald-400" },
+            ].map((r) => (
+              <div key={r.l} className="bg-[#0a0a0f] rounded-lg py-1.5 px-2 text-center">
+              <div className="text-[9px] text-zinc-500 mb-0.5">{r.l}</div>
+              <div className={`text-xs font-bold ${r.color}`}>{r.v}</div>
+              </div>
+            ))}
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+            <Button variant="secondary" size="sm" onClick={() => handleEditAchat(a)}>✏️ Modifier</Button>
+            <Button variant="danger" size="sm" onClick={() => setConfirmDelete(a.id)}>🗑️ Supprimer</Button>
+            </div>
+            </Card>
+          );
+        })
+      )}
+      {achats.length > 0 && (
+        <Card padding={12}>
+        <div className="flex justify-between items-center">
+        <span className="font-bold text-xs">TOTAL GÉNÉRAL</span>
+        <div className="flex gap-3">
+        <span className="text-orange-400 font-extrabold text-[13px]">{formatAr(totalGeneral)}</span>
+        <span className="text-red-400 font-bold text-xs">Solde: {formatAr(totalSolde)}</span>
+        </div>
+        </div>
         </Card>
       )}
-
-      {/* ══ MODAL NOUVEL/ÉDITION ACHAT ══ */}
-      <Modal open={showModal} onClose={() => { setShowModal(false); resetForm(); }} width={isMobile ? 480 : 900}>
-        <ModalHeader title={editMode ? "Modifier l'achat" : "Nouvel achat"} onClose={() => { setShowModal(false); resetForm(); }} />
-        <ModalBody>
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
-            {/* Colonne gauche : Produits */}
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>🛍️ Produits</div>
-              <Input placeholder="Rechercher un produit..." value={searchProduit} onChange={(e) => setSearchProduit(e.target.value)} style={{ marginBottom: 8 }} />
-              <div style={{ maxHeight: 300, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
-                {produitsFiltres.map((p) => (
-                  <button key={p.id} onClick={() => addToCart(p)}
-                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg-secondary)", cursor: "pointer", textAlign: "left", fontFamily: "var(--font)", fontSize: 12 }}>
-                    <div>
-                      <div style={{ fontWeight: 600, color: "var(--text)" }}>{p.nom}</div>
-                      <div style={{ fontSize: 10, color: "var(--text-muted)" }}>Stock: {p.quantite_stock} · {formatAr(p.prix_achat)}</div>
-                    </div>
-                    <span style={{ fontSize: 16, color: C.success }}>＋</span>
-                  </button>
-                ))}
-                {produitsFiltres.length === 0 && <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 16, fontSize: 12 }}>Aucun produit trouvé</div>}
-              </div>
+      </div>
+    ) : (
+      <Card padding={0} className="overflow-hidden">
+      <Table>
+      <TableHead>
+      <TableRow>
+      <TableHeader>Commande</TableHeader>
+      <TableHeader>Fournisseur</TableHeader>
+      <TableHeader>Date</TableHeader>
+      <TableHeader align="right">Montant</TableHeader>
+      <TableHeader align="right">Payé</TableHeader>
+      <TableHeader align="right">Solde</TableHeader>
+      <TableHeader align="center">Statut</TableHeader>
+      <TableHeader align="center">Actions</TableHeader>
+      </TableRow>
+      </TableHead>
+      <TableBody>
+      {achats.length === 0 ? (
+        <TableEmpty colSpan={8} message="Aucun achat" />
+      ) : (
+        achats.map((a) => {
+          const solde = (a.montant_total || 0) - (a.montant_paye || 0);
+          return (
+            <TableRow key={a.id}>
+            <TableCell className="font-semibold font-mono text-xs">{a.numero_commande || "—"}</TableCell>
+            <TableCell>{a.fournisseur_nom || "—"}</TableCell>
+            <TableCell className="text-zinc-500 text-[11px]">{a.date_achat ? new Date(a.date_achat).toLocaleDateString("fr-FR") : "—"}</TableCell>
+            <TableCell align="right" className="font-semibold text-orange-400">{formatAr(a.montant_total)}</TableCell>
+            <TableCell align="right" className="text-emerald-400">{formatAr(a.montant_paye)}</TableCell>
+            <TableCell align="right" className={`font-semibold ${solde > 0 ? "text-red-400" : "text-emerald-400"}`}>{solde > 0 ? formatAr(solde) : "Payé"}</TableCell>
+            <TableCell align="center"><Badge variant={solde > 0 ? "warning" : "success"} size="sm">{solde > 0 ? "Crédit" : "Soldé"}</Badge></TableCell>
+            <TableCell align="center">
+            <div className="flex gap-1 justify-center">
+            <Button variant="secondary" size="sm" onClick={() => handleEditAchat(a)}>✏️</Button>
+            <Button variant="danger" size="sm" onClick={() => setConfirmDelete(a.id)}>🗑️</Button>
             </div>
+            </TableCell>
+            </TableRow>
+          );
+        })
+      )}
+      </TableBody>
+      </Table>
+      {achats.length > 0 && (
+        <div className="py-3 px-4 bg-[#111114] border-t-2 border-[#1e1e24] flex justify-between flex-wrap gap-2">
+        <span className="font-bold text-xs">TOTAL GÉNÉRAL</span>
+        <div className="flex gap-4">
+        <span className="text-orange-400 font-extrabold">{formatAr(totalGeneral)}</span>
+        <span className="text-emerald-400 font-bold">Payé: {formatAr(totalPaye)}</span>
+        <span className="text-red-400 font-bold">Solde: {formatAr(totalSolde)}</span>
+        </div>
+        </div>
+      )}
+      </Card>
+    )}
 
-            {/* Colonne droite : Panier + Formulaire */}
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>🛒 Panier ({panier.length})</div>
-              <div style={{ maxHeight: 200, overflowY: "auto", marginBottom: 12 }}>
-                {panier.length === 0 ? (
-                  <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 20, fontSize: 12, border: "1px dashed var(--border)", borderRadius: 8 }}>Panier vide</div>
-                ) : (
-                  panier.map((p) => (
-                    <div key={p.produit_id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: 11, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.nom}</div>
-                      </div>
-                      <input type="number" min={1} value={p.quantite} onChange={(e) => updateCartQty(p.produit_id, parseInt(e.target.value) || 0)}
-                        style={{ width: 50, padding: "3px 6px", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 11, textAlign: "center", outline: "none" }} />
-                      <input type="number" value={p.prix_unitaire} onChange={(e) => updateCartPrice(p.produit_id, parseFloat(e.target.value) || 0)}
-                        style={{ width: 70, padding: "3px 6px", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 11, textAlign: "center", outline: "none" }} />
-                      <span style={{ fontSize: 11, fontWeight: 700, color: C.gold, minWidth: 60, textAlign: "right" }}>{formatAr(p.sous_total)}</span>
-                      <button onClick={() => updateCartQty(p.produit_id, 0)} style={{ width: 24, height: 24, borderRadius: 6, background: C.dangerDim, border: "1px solid rgba(248,113,113,0.2)", color: C.danger, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>✕</button>
-                    </div>
-                  ))
-                )}
-              </div>
+    {/* ══ MODAL NOUVEL/ÉDITION ACHAT ══ */}
+    <Modal open={showModal} onClose={() => { setShowModal(false); resetForm(); }} width={isMobile ? 480 : 900}>
+    <ModalHeader title={editMode ? "Modifier l'achat" : "Nouvel achat"} onClose={() => { setShowModal(false); resetForm(); }} />
+    <ModalBody>
+    <div className={isMobile ? "grid grid-cols-1 gap-4" : "grid grid-cols-2 gap-4"}>
+    {/* Colonne gauche : Produits */}
+    <div>
+    <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-2">🛍️ Produits</div>
+    <div className="mb-2">
+    <Input placeholder="Rechercher un produit..." value={searchProduit} onChange={(e) => setSearchProduit(e.target.value)} />
+    </div>
+    <div className="max-h-[300px] overflow-y-auto flex flex-col gap-1">
+    {produitsFiltres.map((p) => (
+      <button key={p.id} onClick={() => addToCart(p)}
+      className="flex items-center justify-between py-2 px-2.5 rounded-lg border border-[#1e1e24] bg-[#0a0a0f] cursor-pointer text-left text-xs transition-colors hover:bg-[#16161a]">
+      <div>
+      <div className="font-semibold text-white">{p.nom}</div>
+      <div className="text-[10px] text-zinc-500">Stock: {p.quantite_stock} · {formatAr(p.prix_achat)}</div>
+      </div>
+      <span className="text-base text-emerald-400">＋</span>
+      </button>
+    ))}
+    {produitsFiltres.length === 0 && <div className="text-center text-zinc-500 p-4 text-xs">Aucun produit trouvé</div>}
+    </div>
+    </div>
 
-              {/* Totaux */}
-              {panier.length > 0 && (
-                <div style={{ padding: "8px 10px", background: "var(--bg)", borderRadius: 8, marginBottom: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
-                    <span style={{ color: "var(--text-muted)" }}>Sous-total</span>
-                    <span style={{ fontWeight: 600 }}>{formatAr(totalPanier)}</span>
-                  </div>
-                  {form.tva > 0 && (
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginTop: 2 }}>
-                      <span style={{ color: "var(--text-muted)" }}>TVA</span>
-                      <span style={{ fontWeight: 600 }}>{formatAr(form.tva)}</span>
-                    </div>
-                  )}
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginTop: 4, paddingTop: 4, borderTop: "1px solid var(--border)" }}>
-                    <span style={{ fontWeight: 700 }}>TOTAL</span>
-                    <span style={{ fontWeight: 800, color: C.orange, fontSize: 16 }}>{formatAr(totalAvecTVA)}</span>
-                  </div>
-                </div>
-              )}
+    {/* Colonne droite : Panier + Formulaire */}
+    <div>
+    <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-2">🛒 Panier ({panier.length})</div>
+    <div className="max-h-[200px] overflow-y-auto mb-3">
+    {panier.length === 0 ? (
+      <div className="text-center text-zinc-500 p-5 text-xs border border-dashed border-[#1e1e24] rounded-lg">Panier vide</div>
+    ) : (
+      panier.map((p) => (
+        <div key={p.produit_id} className="flex items-center gap-1.5 py-1.5 border-b border-[#1e1e24]">
+        <div className="flex-1 min-w-0">
+        <div className="font-semibold text-[11px] text-white truncate">{p.nom}</div>
+        </div>
+        <input type="number" min={1} value={p.quantite} onChange={(e) => updateCartQty(p.produit_id, parseInt(e.target.value) || 0)}
+        className="w-[50px] py-[3px] px-1.5 bg-[#111114] border border-[#1e1e24] rounded-md text-white text-[11px] text-center outline-none focus:border-amber-400" />
+        <input type="number" value={p.prix_unitaire} onChange={(e) => updateCartPrice(p.produit_id, parseFloat(e.target.value) || 0)}
+        className="w-[70px] py-[3px] px-1.5 bg-[#111114] border border-[#1e1e24] rounded-md text-white text-[11px] text-center outline-none focus:border-amber-400" />
+        <span className="text-[11px] font-bold text-amber-400 min-w-[60px] text-right">{formatAr(p.sous_total)}</span>
+        <button onClick={() => updateCartQty(p.produit_id, 0)} className="w-6 h-6 rounded-md bg-red-400/10 border border-red-400/20 text-red-400 cursor-pointer flex items-center justify-center text-xs hover:bg-red-400/20">✕</button>
+        </div>
+      ))
+    )}
+    </div>
 
-              {/* Formulaire */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                <Input label="Fournisseur *" placeholder="Nom du fournisseur" value={form.fournisseur_nom} onChange={(e) => setForm({ ...form, fournisseur_nom: e.target.value })} list="fournisseurs-list" />
-                <datalist id="fournisseurs-list">
-                  {fournisseursConnus.map((f) => <option key={f} value={f} />)}
-                </datalist>
-                <Input label="Contact" placeholder="Tél / Email" value={form.fournisseur_contact} onChange={(e) => setForm({ ...form, fournisseur_contact: e.target.value })} />
-                <Input type="date" label="Date" value={form.date_achat} onChange={(e) => setForm({ ...form, date_achat: e.target.value })} />
-                <Input type="number" label="TVA (Ar)" value={String(form.tva)} onChange={(e) => setForm({ ...form, tva: parseFloat(e.target.value) || 0 })} />
-                <Input type="number" label="Payé (Ar)" value={String(form.montant_paye)} onChange={(e) => setForm({ ...form, montant_paye: parseFloat(e.target.value) || 0 })} />
-              </div>
-            </div>
-          </div>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={() => { setShowModal(false); resetForm(); }}>Annuler</Button>
-          <Button variant="primary" onClick={handleSubmit} loading={saving} disabled={saving || panier.length === 0}>
-            {editMode ? "Modifier" : "Enregistrer"}
-          </Button>
-        </ModalFooter>
-      </Modal>
+    {/* Totaux */}
+    {panier.length > 0 && (
+      <div className="py-2 px-2.5 bg-[#0a0a0f] rounded-lg mb-3">
+      <div className="flex justify-between text-[11px]">
+      <span className="text-zinc-500">Sous-total</span>
+      <span className="font-semibold">{formatAr(totalPanier)}</span>
+      </div>
+      {form.tva > 0 && (
+        <div className="flex justify-between text-[11px] mt-0.5">
+        <span className="text-zinc-500">TVA</span>
+        <span className="font-semibold">{formatAr(form.tva)}</span>
+        </div>
+      )}
+      <div className="flex justify-between text-[13px] mt-1 pt-1 border-t border-[#1e1e24]">
+      <span className="font-bold">TOTAL</span>
+      <span className="font-extrabold text-orange-400 text-base">{formatAr(totalAvecTVA)}</span>
+      </div>
+      </div>
+    )}
+
+    {/* Formulaire */}
+    <div className="grid grid-cols-2 gap-2">
+    <Input label="Fournisseur *" placeholder="Nom du fournisseur" value={form.fournisseur_nom} onChange={(e) => setForm({ ...form, fournisseur_nom: e.target.value })} list="fournisseurs-list" />
+    <datalist id="fournisseurs-list">
+    {fournisseursConnus.map((f) => <option key={f} value={f} />)}
+    </datalist>
+    <Input label="Contact" placeholder="Tél / Email" value={form.fournisseur_contact} onChange={(e) => setForm({ ...form, fournisseur_contact: e.target.value })} />
+    <Input type="date" label="Date" value={form.date_achat} onChange={(e) => setForm({ ...form, date_achat: e.target.value })} />
+    <Input type="number" label="TVA (Ar)" value={String(form.tva)} onChange={(e) => setForm({ ...form, tva: parseFloat(e.target.value) || 0 })} />
+    <Input type="number" label="Payé (Ar)" value={String(form.montant_paye)} onChange={(e) => setForm({ ...form, montant_paye: parseFloat(e.target.value) || 0 })} />
+    </div>
+    </div>
+    </div>
+    </ModalBody>
+    <ModalFooter>
+    <Button variant="secondary" onClick={() => { setShowModal(false); resetForm(); }}>Annuler</Button>
+    <Button variant="primary" onClick={handleSubmit} loading={saving} disabled={saving || panier.length === 0}>
+    {editMode ? "Modifier" : "Enregistrer"}
+    </Button>
+    </ModalFooter>
+    </Modal>
     </div>
   );
 }

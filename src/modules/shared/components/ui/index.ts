@@ -1,11 +1,11 @@
-// ui/index.ts - Export centralise du design system
-
+// ui/index.ts - Export centralisé du design system (100% Tailwind pur)
 export type { BadgeVariant } from "./Badge";
 export { Badge } from "./Badge";
 export { Button } from "./Button";
 export { Card, CardContent, CardFooter, CardHeader, CardTitle, SectionHeader } from "./Card";
 export { ConfirmDialog } from "./ConfirmDialog";
 export type { NavIconKey } from "./Icons";
+export { CloseIcon } from "./Icons";
 export {
   CheckIcon,
   ChevronDownIcon,

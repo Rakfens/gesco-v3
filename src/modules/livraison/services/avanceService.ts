@@ -1,63 +1,103 @@
-// avanceService.ts
-import { getCurrentCompany, getSupabase } from "@/lib/supabase";
+// src/modules/livraison/services/avanceService.ts
+import { createClient } from "@/lib/supabase";
 import type { Avance } from "@/modules/shared/types";
 
-export const fetchAvances = async (companyId: string): Promise<Avance[]> => {
-  const company = getCurrentCompany();
-  if (!company) return [];
-  const { data, error } = await getSupabase()
-    .from("avances")
-    .select("*")
-    .eq("company_id", companyId)
-    .order("date", { ascending: false });
-  if (error) throw error;
-  return data || [];
-};
+/* ─── Helpers ─── */
+function getClient() {
+  return createClient();
+}
 
-export const addAvance = async (avance: Partial<Avance>, companyId?: string): Promise<Avance> => {
-  const company = companyId ? { id: companyId } : getCurrentCompany();
-  if (!company) throw new Error("Aucune société sélectionnée");
-  if (!avance.agent_id && !avance.agent_nom) throw new Error("Agent requis");
-  if (!avance.montant || avance.montant <= 0) throw new Error("Montant valide requis");
-  if (!avance.date) throw new Error("Date requise");
+function ensureCompanyId(companyId: string | undefined): asserts companyId is string {
+  if (!companyId) throw new Error("Aucune société sélectionnée");
+}
 
-  const { data, error } = await getSupabase()
-    .from("avances")
-    .insert([
-      {
-        agent_id: avance.agent_id,
-        agent_nom: avance.agent_nom,
-        montant: parseFloat(String(avance.montant)),
-        motif: avance.motif || null,
-        date: avance.date,
-        mois: avance.mois,
-        annule: false,
-        company_id: company.id,
-      },
-    ])
-    .select();
-  if (error) throw error;
-  return data[0];
-};
+/* ─── Fetch ─── */
+export async function fetchAvances(companyId: string): Promise<Avance[]> {
+  ensureCompanyId(companyId);
 
-export const annulerAvance = async (id: string, companyId?: string): Promise<void> => {
-  const company = companyId ? { id: companyId } : getCurrentCompany();
-  if (!company) throw new Error("Aucune société sélectionnée");
-  const { error } = await getSupabase()
-    .from("avances")
-    .update({ annule: true })
-    .eq("id", id)
-    .eq("company_id", company.id);
-  if (error) throw error;
-};
+  const { data, error } = await getClient()
+  .from("avances")
+  .select("*")
+  .eq("company_id", companyId)
+  .order("date", { ascending: false });
 
-export const deleteAvance = async (id: string, companyId?: string): Promise<void> => {
-  const company = companyId ? { id: companyId } : getCurrentCompany();
-  if (!company) throw new Error("Aucune société sélectionnée");
-  const { error } = await getSupabase()
-    .from("avances")
-    .delete()
-    .eq("id", id)
-    .eq("company_id", company.id);
-  if (error) throw error;
-};
+  if (error) throw new Error(`Erreur fetch avances: ${error.message}`);
+  return (data as Avance[]) || [];
+}
+
+/* ─── Create ─── */
+export async function addAvance(
+  avance: Partial<Avance>,
+  companyId: string
+): Promise<Avance> {
+  ensureCompanyId(companyId);
+
+  if (!avance.agent_id && !avance.agent_nom) {
+    throw new Error("Agent requis (agent_id ou agent_nom)");
+  }
+  if (!avance.montant || avance.montant <= 0) {
+    throw new Error("Montant valide requis (> 0)");
+  }
+  if (!avance.date) {
+    throw new Error("Date requise");
+  }
+
+  const montant = parseFloat(String(avance.montant));
+  if (isNaN(montant)) {
+    throw new Error("Montant invalide");
+  }
+
+  const { data, error } = await getClient()
+  .from("avances")
+  .insert([
+    {
+      agent_id: avance.agent_id,
+      agent_nom: avance.agent_nom?.trim() || null,
+          montant,
+          motif: avance.motif?.trim() || null,
+          date: avance.date,
+          mois: avance.mois,
+          annule: false,
+          company_id: companyId,
+    },
+  ])
+  .select()
+  .single();
+
+  if (error) throw new Error(`Erreur ajout avance: ${error.message}`);
+  if (!data) throw new Error("Aucune donnée retournée après l'insertion");
+
+  return data as Avance;
+}
+
+/* ─── Annuler (soft delete) ─── */
+export async function annulerAvance(
+  id: string,
+  companyId: string
+): Promise<void> {
+  ensureCompanyId(companyId);
+
+  const { error } = await getClient()
+  .from("avances")
+  .update({ annule: true })
+  .eq("id", id)
+  .eq("company_id", companyId);
+
+  if (error) throw new Error(`Erreur annulation avance: ${error.message}`);
+}
+
+/* ─── Delete (hard delete) ─── */
+export async function deleteAvance(
+  id: string,
+  companyId: string
+): Promise<void> {
+  ensureCompanyId(companyId);
+
+  const { error } = await getClient()
+  .from("avances")
+  .delete()
+  .eq("id", id)
+  .eq("company_id", companyId);
+
+  if (error) throw new Error(`Erreur suppression avance: ${error.message}`);
+}

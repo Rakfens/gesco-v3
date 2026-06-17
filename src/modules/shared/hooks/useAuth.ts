@@ -1,9 +1,11 @@
+// src/modules/shared/hooks/useAuth.ts
 "use client";
 
-// useAuth.ts — utilise getSupabase() au lieu du Proxy
-import { useEffect, useRef, useState } from "react";
-import { clearCurrentCompany, getSupabase } from "@/lib/supabase";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase";
+import { clearCurrentCompany } from "@/lib/supabase";
 
+/* ─── Types ─── */
 interface SupabaseUser {
   id: string;
   email?: string;
@@ -11,65 +13,85 @@ interface SupabaseUser {
 }
 
 interface UseAuthReturn {
-  user: SupabaseUser | null | undefined;
+  user: SupabaseUser | null;
   loading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<unknown>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   authError: string | null;
 }
 
-export const useAuth = (): UseAuthReturn => {
-  const [user, setUser] = useState<SupabaseUser | null | undefined>(undefined);
+/* ─── Auth Hook ─── */
+export function useAuth(): UseAuthReturn {
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
-  const resolved = useRef(false);
 
+  const mounted = useRef(true);
+
+  // Initial load + realtime auth state
   useEffect(() => {
-    const sb = getSupabase();
-    const {
-      data: { subscription },
-    } = sb.auth.onAuthStateChange((_event, session) => {
-      const u = (session?.user ?? null) as SupabaseUser | null;
-      setUser(u);
-      resolved.current = true;
+    mounted.current = true;
+    const supabase = createClient();
+
+    // Récupération initiale
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted.current) return;
+      setUser((session?.user as unknown as SupabaseUser | null) ?? null);
+      setLoading(false);
     });
 
-    const guard = setTimeout(() => {
-      if (!resolved.current) setUser(null);
-    }, 4000);
+    // Subscription aux changements d'état
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted.current) return;
+      setUser((session?.user as unknown as SupabaseUser | null) ?? null);
+      setLoading(false);
+    });
 
     return () => {
-      clearTimeout(guard);
+      mounted.current = false;
       subscription.unsubscribe();
     };
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     setAuthError(null);
-    const sb = getSupabase();
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    const supabase = createClient();
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+                                                             password,
+    });
+
     if (error) {
       setAuthError(error.message);
-      throw error;
+      throw new Error(error.message);
     }
-    return data;
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     clearCurrentCompany();
     setUser(null);
+    setLoading(true);
+
     try {
-      const sb = getSupabase();
-      await sb.auth.signOut();
-    } catch (_) {}
-  };
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // Ignorer silencieusement — l'utilisateur est déjà considéré comme déconnecté
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   return {
     user,
-    loading: user === undefined,
+    loading,
     isAuthenticated: !!user,
     login,
     logout,
     authError,
   };
-};
+}

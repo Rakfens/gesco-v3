@@ -1,15 +1,15 @@
+// src/modules/shared/hooks/useAgents.ts
 "use client";
 
-// useAgents.ts — v2 : companyId passé au service, plus de race condition
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Agent } from "@/modules/shared/types";
 import {
-  addAgent,
-  deleteAgent,
+  addAgent as addAgentService,
+  deleteAgent as deleteAgentService,
   fetchAgents,
-  updateAgent,
-} from "../../livraison/services/agentService";
-import { useCompany } from "../context/CompanyContext";
+  updateAgent as updateAgentService,
+} from "@/modules/livraison/services/agentService";
+import { useCompany } from "@/modules/shared/context/CompanyContext";
 
 interface UseAgentsReturn {
   agents: Agent[];
@@ -21,11 +21,13 @@ interface UseAgentsReturn {
   reloadAgents: () => Promise<void>;
 }
 
-export const useAgents = (): UseAgentsReturn => {
+export function useAgents(): UseAgentsReturn {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { currentCompany } = useCompany();
+
+  const mounted = useRef(true);
 
   const loadAgents = useCallback(async () => {
     if (!currentCompany?.id) {
@@ -33,50 +35,104 @@ export const useAgents = (): UseAgentsReturn => {
       setLoading(false);
       return;
     }
+
     try {
       setError(null);
+      setLoading(true);
       const data = await fetchAgents(currentCompany.id);
-      setAgents(data);
+      if (mounted.current) setAgents(data);
     } catch (err: unknown) {
-      setError((err as Error).message);
+      if (mounted.current) {
+        setError(err instanceof Error ? err.message : "Erreur lors du chargement des agents");
+      }
     } finally {
-      setLoading(false);
+      if (mounted.current) setLoading(false);
     }
   }, [currentCompany?.id]);
 
+  // Load initial + cleanup
   useEffect(() => {
+    mounted.current = true;
     loadAgents();
+    return () => {
+      mounted.current = false;
+    };
   }, [loadAgents]);
 
+  // Realtime sync
   useEffect(() => {
     const handler = (e: Event) => {
-      if ((e as CustomEvent).detail?.table === "agents") loadAgents();
+      if ((e as CustomEvent).detail?.table === "agents") {
+        loadAgents();
+      }
     };
     window.addEventListener("supabase_realtime", handler);
     return () => window.removeEventListener("supabase_realtime", handler);
   }, [loadAgents]);
 
-  const handleAddAgent = async (nom: string, salaire: number) => {
-    const companyId = currentCompany?.id;
-    if (!companyId) throw new Error("Société non sélectionnée");
-    const a = await addAgent(nom, salaire, companyId);
-    setAgents((prev) => [...prev, a]);
-    return a;
-  };
+  const handleAddAgent = useCallback(
+    async (nom: string, salaire: number) => {
+      if (!currentCompany?.id) {
+        const msg = "Société non sélectionnée";
+        setError(msg);
+        throw new Error(msg);
+      }
 
-  const handleUpdateAgent = async (id: string, updates: Partial<Agent>) => {
-    const companyId = currentCompany?.id;
-    if (!companyId) throw new Error("Société non sélectionnée");
-    await updateAgent(id, updates, companyId);
-    setAgents((prev) => prev.map((a) => (a.id === id ? { ...a, ...updates } : a)));
-  };
+      try {
+        setError(null);
+        const a = await addAgentService(nom, salaire, currentCompany.id);
+        setAgents((prev) => [...prev, a]);
+        return a;
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Erreur lors de l'ajout";
+        setError(msg);
+        throw err;
+      }
+    },
+    [currentCompany?.id]
+  );
 
-  const handleDeleteAgent = async (id: string) => {
-    const companyId = currentCompany?.id;
-    if (!companyId) throw new Error("Société non sélectionnée");
-    await deleteAgent(id, companyId);
-    setAgents((prev) => prev.filter((a) => a.id !== id));
-  };
+  const handleUpdateAgent = useCallback(
+    async (id: string, updates: Partial<Agent>) => {
+      if (!currentCompany?.id) {
+        const msg = "Société non sélectionnée";
+        setError(msg);
+        throw new Error(msg);
+      }
+
+      try {
+        setError(null);
+        await updateAgentService(id, updates, currentCompany.id);
+        setAgents((prev) => prev.map((a) => (a.id === id ? { ...a, ...updates } : a)));
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Erreur lors de la mise à jour";
+        setError(msg);
+        throw err;
+      }
+    },
+    [currentCompany?.id]
+  );
+
+  const handleDeleteAgent = useCallback(
+    async (id: string) => {
+      if (!currentCompany?.id) {
+        const msg = "Société non sélectionnée";
+        setError(msg);
+        throw new Error(msg);
+      }
+
+      try {
+        setError(null);
+        await deleteAgentService(id, currentCompany.id);
+        setAgents((prev) => prev.filter((a) => a.id !== id));
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Erreur lors de la suppression";
+        setError(msg);
+        throw err;
+      }
+    },
+    [currentCompany?.id]
+  );
 
   return {
     agents,
@@ -87,4 +143,4 @@ export const useAgents = (): UseAgentsReturn => {
     deleteAgent: handleDeleteAgent,
     reloadAgents: loadAgents,
   };
-};
+}

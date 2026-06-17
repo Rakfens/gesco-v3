@@ -1,4 +1,5 @@
-import type React from "react";
+// ui/StatCard.tsx — 100% Tailwind pur
+import type { ReactNode } from "react";
 
 interface StatCardProps {
   title?: string;
@@ -6,117 +7,96 @@ interface StatCardProps {
   value: string | number;
   subtitle?: string;
   sub?: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   trend?: { value: number; label: string };
   color?: string;
   loading?: boolean;
+  className?: string; // ← AJOUTÉ
 }
 
-const colorMap: Record<string, { bg: string; text: string; gradient: string }> = {
-  blue: { bg: "var(--blue-light)", text: "var(--blue)", gradient: "linear-gradient(135deg, #60a5fa, #3b82f6)" },
-  green: { bg: "var(--success-light)", text: "var(--success)", gradient: "linear-gradient(135deg, #34d399, #10b981)" },
-  red: { bg: "var(--danger-light)", text: "var(--danger)", gradient: "linear-gradient(135deg, #f87171, #ef4444)" },
-  orange: { bg: "var(--warning-light)", text: "var(--warning)", gradient: "linear-gradient(135deg, #fbbf24, #f59e0b)" },
-  purple: { bg: "var(--purple-light)", text: "var(--purple)", gradient: "linear-gradient(135deg, #a78bfa, #8b5cf6)" },
-  cyan: { bg: "var(--cyan-light)", text: "var(--cyan)", gradient: "linear-gradient(135deg, #7dd3fc, #38bdf8)" },
-  teal: { bg: "var(--teal-light)", text: "var(--teal)", gradient: "linear-gradient(135deg, #2dd4bf, #14b8a6)" },
-  accent: { bg: "var(--accent-light)", text: "var(--accent)", gradient: "linear-gradient(135deg, #c9a96e, #a68b4b)" },
-  success: { bg: "var(--success-light)", text: "var(--success)", gradient: "linear-gradient(135deg, #34d399, #10b981)" },
-  warning: { bg: "var(--warning-light)", text: "var(--warning)", gradient: "linear-gradient(135deg, #fbbf24, #f59e0b)" },
-  danger: { bg: "var(--danger-light)", text: "var(--danger)", gradient: "linear-gradient(135deg, #f87171, #ef4444)" },
-  info: { bg: "var(--info-light)", text: "var(--info)", gradient: "linear-gradient(135deg, #7dd3fc, #38bdf8)" },
-  accent2: { bg: "var(--accent2-light)", text: "var(--accent2)", gradient: "linear-gradient(135deg, #a78bfa, #8b5cf6)" },
+const colorClassesMap: Record<string, {
+  iconBg: string;
+  iconText: string;
+  gradient: string;
+}> = {
+  blue:     { iconBg: "bg-blue-500/10",     iconText: "text-blue-400",     gradient: "bg-gradient-to-r from-blue-400 to-blue-600" },
+  green:    { iconBg: "bg-emerald-500/10",  iconText: "text-emerald-400",  gradient: "bg-gradient-to-r from-emerald-400 to-emerald-600" },
+  red:      { iconBg: "bg-red-500/10",      iconText: "text-red-400",      gradient: "bg-gradient-to-r from-red-400 to-red-600" },
+  orange:   { iconBg: "bg-amber-500/10",    iconText: "text-amber-400",    gradient: "bg-gradient-to-r from-amber-400 to-amber-600" },
+  purple:   { iconBg: "bg-violet-500/10",   iconText: "text-violet-400",   gradient: "bg-gradient-to-r from-violet-400 to-violet-600" },
+  cyan:     { iconBg: "bg-sky-500/10",      iconText: "text-sky-400",      gradient: "bg-gradient-to-r from-sky-400 to-sky-500" },
+  teal:     { iconBg: "bg-teal-500/10",     iconText: "text-teal-400",     gradient: "bg-gradient-to-r from-teal-400 to-teal-600" },
+  accent:   { iconBg: "bg-amber-400/10",    iconText: "text-amber-400",    gradient: "bg-gradient-to-r from-amber-400 to-amber-600" },
+  success:  { iconBg: "bg-emerald-500/10",  iconText: "text-emerald-400",  gradient: "bg-gradient-to-r from-emerald-400 to-emerald-600" },
+  warning:  { iconBg: "bg-amber-500/10",    iconText: "text-amber-400",    gradient: "bg-gradient-to-r from-amber-400 to-amber-600" },
+  danger:   { iconBg: "bg-red-500/10",      iconText: "text-red-400",      gradient: "bg-gradient-to-r from-red-400 to-red-600" },
+  info:     { iconBg: "bg-sky-500/10",      iconText: "text-sky-400",      gradient: "bg-gradient-to-r from-sky-400 to-sky-500" },
+  accent2:  { iconBg: "bg-violet-500/10",   iconText: "text-violet-400",   gradient: "bg-gradient-to-r from-violet-400 to-violet-600" },
 };
 
-function resolveColor(color: string) {
-  if (colorMap[color]) return colorMap[color];
-  // Fallback: treat as a CSS color value
-  return { bg: `${color}18`, text: color, gradient: color };
+function resolveColorClasses(color: string) {
+  return colorClassesMap[color] || {
+    iconBg: "bg-white/5",
+    iconText: "text-gray-400",
+    gradient: "bg-gradient-to-r from-gray-400 to-gray-600",
+  };
 }
 
-export const StatCard: React.FC<StatCardProps> = ({
-  title, label, value, subtitle, sub, icon, trend, color = "accent", loading = false,
-}) => {
-  const c = resolveColor(color);
+export function StatCard({
+  title,
+  label,
+  value,
+  subtitle,
+  sub,
+  icon,
+  trend,
+  color = "accent",
+  loading = false,
+  className = "", // ← AJOUTÉ
+}: StatCardProps) {
+  const c = resolveColorClasses(color);
   const subText = subtitle || sub;
   const displayTitle = title || label;
 
   if (loading) {
     return (
-      <div style={{
-        background: "var(--card)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)",
-        padding: 20, boxShadow: "var(--shadow-sm)",
-      }}>
-        <div className="skeleton" style={{ height: 12, width: "60%", marginBottom: 12 }} />
-        <div className="skeleton" style={{ height: 28, width: "40%", marginBottom: 8 }} />
-        <div className="skeleton" style={{ height: 10, width: "80%" }} />
+      <div className={`relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#121218] p-5 shadow-[0_2px_8px_rgba(0,0,0,0.4)] ${className}`}>
+      <div className="skeleton mb-3 h-3 w-3/5" />
+      <div className="skeleton mb-2 h-7 w-2/5" />
+      <div className="skeleton h-2.5 w-4/5" />
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        background: "var(--card)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)",
-        padding: 20, boxShadow: "var(--shadow-sm)", transition: "all var(--transition)",
-        position: "relative", overflow: "hidden",
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-md)";
-        (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
-        (e.currentTarget as HTMLElement).style.borderColor = "var(--border-strong)";
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-sm)";
-        (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-        (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
-      }}
-    >
-      {/* Top gradient line */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: c.gradient }} />
-
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
-        <span style={{
-          fontSize: 11, fontWeight: 700, color: "var(--text-muted)",
-          textTransform: "uppercase", letterSpacing: "0.06em",
-        }}>
-          {displayTitle}
+    <div className={`group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#121218] p-5 shadow-[0_2px_8px_rgba(0,0,0,0.4)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.12] hover:shadow-[0_4px_16px_rgba(0,0,0,0.5)] ${className}`}>
+    {/* Top gradient line */}
+    <div className={`absolute left-0 right-0 top-0 h-[3px] ${c.gradient}`} />
+    <div className="mb-3.5 flex items-start justify-between">
+    <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+    {displayTitle}
+    </span>
+    {icon && (
+      <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${c.iconBg} ${c.iconText}`}>
+      {icon}
+      </div>
+    )}
+    </div>
+    <div className="text-[28px] font-extrabold leading-tight tracking-tight text-gray-100">
+    {value}
+    </div>
+    {(subText || trend) && (
+      <div className="mt-2 flex items-center gap-1.5">
+      {trend && (
+        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${trend.value >= 0 ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
+        {trend.value >= 0 ? "↑" : "↓"} {Math.abs(trend.value)}%
         </span>
-        {icon && (
-          <div style={{
-            width: 40, height: 40, borderRadius: "var(--radius-lg)",
-            background: c.bg, color: c.text,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            {icon}
-          </div>
-        )}
-      </div>
-
-      <div style={{
-        fontSize: 28, fontWeight: 800, color: "var(--text)",
-        letterSpacing: "-0.02em", lineHeight: 1.1,
-      }}>
-        {value}
-      </div>
-
-      {(subText || trend) && (
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
-          {trend && (
-            <span style={{
-              fontSize: 11, fontWeight: 600,
-              color: trend.value >= 0 ? "var(--success)" : "var(--danger)",
-              padding: "2px 8px", borderRadius: "var(--radius-full)",
-              background: trend.value >= 0 ? "var(--success-light)" : "var(--danger-light)",
-            }}>
-              {trend.value >= 0 ? "↑" : "↓"} {Math.abs(trend.value)}%
-            </span>
-          )}
-          {subText && <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{subText}</span>}
-        </div>
       )}
+      {subText && <span className="text-xs text-gray-500">{subText}</span>}
+      </div>
+    )}
     </div>
   );
-};
+}
 
 export default StatCard;

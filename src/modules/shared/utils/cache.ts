@@ -8,7 +8,11 @@ class CacheService {
   private cache = new Map<string, CacheEntry<unknown>>();
   private defaultTTL = 300000; // 5 min
 
-  async get<T>(key: string, fetchFn: () => Promise<T>, ttl: number = this.defaultTTL): Promise<T> {
+  async get<T>(
+    key: string,
+    fetchFn: () => Promise<T>,
+               ttl: number = this.defaultTTL,
+  ): Promise<T> {
     const cached = this.cache.get(key) as CacheEntry<T> | undefined;
     if (cached && Date.now() - cached.timestamp < ttl) {
       return cached.data;
@@ -35,11 +39,12 @@ export const cache = new CacheService();
 
 // Listen to Realtime events and invalidate cache
 if (typeof window !== "undefined") {
-  window.addEventListener("supabase_realtime", (e: Event) => {
+  const handler = (e: Event) => {
     const detail = (e as CustomEvent<{ table?: string }>).detail;
     const { table } = detail || {};
     if (table) {
       cache.invalidate(table);
     }
-  });
+  };
+  window.addEventListener("supabase_realtime", handler);
 }

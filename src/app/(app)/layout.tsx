@@ -10,12 +10,9 @@ import { NAV_CONFIG } from "@/modules/shared/components/layout/navConfig";
 import { AppProvider } from "@/modules/shared/context/AppContext";
 import { CompanyProvider, useCompany } from "@/modules/shared/context/CompanyContext";
 
-export const dynamic = "force-dynamic";
-
-/* ─── Sidebar Navigation Icons (inline SVG, noir & or) ─── */
 const SvgIcon = ({ d, size = 16 }: { d: string; size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d={d} />
+  <path d={d} />
   </svg>
 );
 
@@ -39,7 +36,6 @@ const NavIcon = ({ icon }: { icon: string }) => {
   return <SvgIcon d={icons[icon] || icons.grid} />;
 };
 
-/* ─── Main Layout Content ─── */
 function LayoutContent({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -48,244 +44,118 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   const handleLogout = useCallback(async () => {
-    await getSupabase().auth.signOut();
+    try { await getSupabase().auth.signOut(); } catch (e) { console.error("Logout error:", e); }
     router.push("/login");
     router.refresh();
   }, [router]);
 
-  const navItems =
-    currentCompany?.type === "service"
-      ? NAV_CONFIG.service
-      : currentCompany?.type === "commerce"
-        ? NAV_CONFIG.commerce
-        : [];
-
+  const navItems = currentCompany?.type === "service" ? NAV_CONFIG.service : currentCompany?.type === "commerce" ? NAV_CONFIG.commerce : [];
   const meta = getCompanyMeta(currentCompany);
-
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "var(--font)" }}>
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          style={{
-            position: "fixed", inset: 0, zIndex: 30,
-            background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)",
-          }}
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+    <div className="flex h-screen font-sans bg-[#08080c]">
+    {/* Mobile overlay */}
+    <div className={`fixed inset-0 z-30 bg-black/70 backdrop-blur-sm transition-opacity lg:hidden ${sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={() => setSidebarOpen(false)} />
 
-      {/* ══ SIDEBAR ══ */}
-      <aside
-        className={!sidebarOpen ? "sidebar-mobile-hide" : ""}
-        style={{
-          position: "fixed", inset: "0 auto 0 0", zIndex: 40,
-          display: "flex", flexDirection: "column",
-          width: "var(--sidebar-w)", background: "var(--sidebar-bg)",
-          borderRight: "1px solid rgba(255,255,255,0.04)",
-          transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
-          transition: "transform var(--transition)", flexShrink: 0,
-        }}
-      >
-        {/* Brand */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 12,
-          height: "var(--header-h)", padding: "0 24px",
-          borderBottom: "1px solid rgba(255,255,255,0.04)",
-        }}>
-          <div style={{
-            width: 38, height: 38, borderRadius: "var(--radius-md)",
-            background: "linear-gradient(135deg, #c9a96e, #a68b4b)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 15, fontWeight: 900, color: "#08080c",
-            boxShadow: "0 0 20px rgba(201,169,110,0.2)",
-          }}>
-            G
-          </div>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>
-              GesCo
-            </div>
-            <div style={{ fontSize: 10, color: "var(--text-faint)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-              Aterinay Services
-            </div>
-          </div>
-        </div>
+    {/* ══ SIDEBAR ══ */}
+    <aside className={`fixed inset-y-0 left-0 z-40 flex flex-col w-[260px] border-r border-white/[0.04] bg-[#0f0f13]/80 backdrop-blur-xl transition-transform duration-300 ease-out lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+    {/* Brand */}
+    <div className="flex items-center gap-3 h-16 px-6 border-b border-white/[0.04]">
+    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-lg font-black text-gray-950 shadow-[0_0_20px_rgba(201,169,110,0.3)]">
+    G
+    </div>
+    <div>
+    <div className="text-sm font-bold text-white tracking-tight">GesCo</div>
+    <div className="text-[10px] text-zinc-600 uppercase tracking-widest">Aterinay Services</div>
+    </div>
+    </div>
 
-        {/* Company selector */}
-        {currentCompany && (
-          <div style={{ padding: "14px 18px" }}>
-            <button
-              onClick={() => setSheetOpen(true)}
-              style={{
-                width: "100%", display: "flex", alignItems: "center", gap: 10,
-                padding: "10px 14px", borderRadius: "var(--radius-md)",
-                background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
-                cursor: "pointer", transition: "all var(--transition-fast)",
-              }}
-            >
-              <div style={{
-                width: 32, height: 32, borderRadius: "var(--radius-sm)",
-                background: "linear-gradient(135deg, var(--accent), var(--accent2))",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 11, fontWeight: 800, color: "#fff", flexShrink: 0,
-              }}>
-                {meta.icon}
-              </div>
-              <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {currentCompany.name}
-                </div>
-                <div style={{ fontSize: 10, color: "var(--sidebar-text)" }}>{meta.label}</div>
-              </div>
-              {companies?.length > 1 && (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--sidebar-text)" strokeWidth="2">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              )}
-            </button>
-          </div>
-        )}
-
-        {/* Navigation */}
-        <nav style={{ flex: 1, overflowY: "auto", padding: "8px 12px" }}>
-          {navItems.map((item) => {
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setSidebarOpen(false)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 12,
-                  padding: "11px 16px", borderRadius: "var(--radius-md)",
-                  fontSize: 13, fontWeight: active ? 600 : 500,
-                  textDecoration: "none", marginBottom: 2,
-                  transition: "all var(--transition-fast)",
-                  position: "relative",
-                  color: active ? "#08080c" : "var(--sidebar-text)",
-                  background: active ? "var(--accent)" : "transparent",
-                  boxShadow: active ? "0 0 20px rgba(201,169,110,0.15)" : "none",
-                }}
-                onMouseEnter={(e) => {
-                  if (!active) {
-                    (e.currentTarget as HTMLElement).style.background = "var(--sidebar-hover)";
-                    (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) {
-                    (e.currentTarget as HTMLElement).style.background = "transparent";
-                    (e.currentTarget as HTMLElement).style.color = "var(--sidebar-text)";
-                  }
-                }}
-              >
-                <NavIcon icon={item.icon} />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Sidebar footer */}
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", padding: "16px 20px" }}>
-          <button
-            onClick={handleLogout}
-            style={{
-              display: "flex", alignItems: "center", gap: 8,
-              padding: "8px 14px", borderRadius: "var(--radius-md)",
-              background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.1)",
-              color: "#f87171", fontSize: 12, fontWeight: 500,
-              cursor: "pointer", width: "100%", transition: "all var(--transition-fast)",
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-            </svg>
-            Déconnexion
-          </button>
-        </div>
-      </aside>
-
-      {/* ══ MAIN AREA ══ */}
-      <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden", minWidth: 0 }}>
-        {/* Header */}
-        <header style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          height: "var(--header-h)", padding: "0 28px",
-          background: "var(--header-bg)", backdropFilter: `blur(var(--header-blur))`,
-          borderBottom: "1px solid rgba(255,255,255,0.04)",
-          position: "sticky", top: 0, zIndex: 50, gap: 12,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="mobile-menu-btn"
-              style={{
-                background: "none", border: "none", color: "var(--text-secondary)",
-                cursor: "pointer", padding: 4, display: "flex",
-              }}
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
-            </button>
-            {/* Breadcrumb-like */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text-muted)" }}>
-              <span style={{ color: "var(--accent)", fontWeight: 600 }}>
-                {currentCompany?.name || "GesCo"}
-              </span>
-              <span style={{ color: "var(--text-faint)", fontSize: 16 }}>/</span>
-              <span style={{ color: "var(--text)", fontWeight: 600, fontSize: 13 }}>
-                {navItems.find((i) => isActive(i.href))?.label || "Tableau de bord"}
-              </span>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {/* User avatar */}
-            <div style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "5px 14px 5px 6px", borderRadius: "var(--radius-full)",
-              border: "1px solid var(--border)", background: "var(--card)",
-            }}>
-              <div style={{
-                width: 30, height: 30, borderRadius: "50%",
-                background: "linear-gradient(135deg, var(--accent), var(--accent2))",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 12, fontWeight: 800, color: "#08080c",
-              }}>
-                A
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Admin</span>
-            </div>
-          </div>
-        </header>
-
-        {/* Content */}
-        <main
-          className="app-main"
-          style={{
-            flex: 1, overflow: "auto", padding: 28,
-            background: "var(--bg-secondary)",
-          }}
-        >
-          {children}
-        </main>
+    {/* Company selector */}
+    {currentCompany && (
+      <div className="py-3.5 px-[18px]">
+      <button type="button" onClick={() => setSheetOpen(true)} className="w-full flex items-center gap-2.5 py-2.5 px-3.5 rounded-lg bg-white/[0.02] border border-white/[0.06] cursor-pointer transition-all duration-150 hover:bg-white/[0.04] hover:border-white/[0.1]">
+      <div className="w-8 h-8 rounded-md bg-gradient-to-br from-amber-400 to-violet-500 flex items-center justify-center text-[11px] font-extrabold text-white shrink-0 shadow-lg">
+      {meta.icon}
       </div>
-
-      {sheetOpen && (
-        <CompanySheet
-          companies={companies}
-          currentCompany={currentCompany}
-          onSelect={switchCompany}
-          onClose={() => setSheetOpen(false)}
-        />
+      <div className="flex-1 min-w-0 text-left">
+      <div className="text-[13px] font-semibold text-white truncate">{currentCompany.name}</div>
+      <div className="text-[10px] text-zinc-500">{meta.label}</div>
+      </div>
+      {companies && companies.length > 1 && (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-500">
+        <polyline points="6 9 12 15 18 9" />
+        </svg>
       )}
+      </button>
+      </div>
+    )}
+
+    {/* Navigation */}
+    <nav className="flex-1 overflow-y-auto py-2 px-3 space-y-1">
+    {navItems.map((item) => {
+      const active = isActive(item.href);
+      return (
+        <Link key={item.href} href={item.href} onClick={() => setSidebarOpen(false)}
+        className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-200 ${active ? "bg-amber-400/10 text-amber-400 font-semibold shadow-[0_0_20px_rgba(201,169,110,0.1)]" : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"}`}>
+        <span className={active ? "text-amber-400" : "text-zinc-500 group-hover:text-zinc-300 transition-colors"}>
+        <NavIcon icon={item.icon} />
+        </span>
+        {item.label}
+        {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(201,169,110,0.5)]" />}
+        </Link>
+      );
+    })}
+    </nav>
+
+    {/* Sidebar footer */}
+    <div className="border-t border-white/[0.04] py-4 px-5">
+    <button type="button" onClick={handleLogout} className="flex items-center gap-2 py-2 px-3.5 rounded-lg bg-red-400/[0.06] border border-red-400/[0.1] text-red-400 text-xs font-medium cursor-pointer w-full transition-all duration-150 hover:bg-red-400/[0.1] btn-press">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+    </svg>
+    Déconnexion
+    </button>
+    </div>
+    </aside>
+
+    {/* ══ MAIN AREA ══ */}
+    <div className="flex flex-col flex-1 overflow-hidden min-w-0">
+    {/* Header */}
+    <header className="flex items-center justify-between h-16 px-7 bg-[#0f0f13]/60 backdrop-blur-xl border-b border-white/[0.04] sticky top-0 z-50 gap-3">
+    <div className="flex items-center gap-3.5">
+    <button type="button" onClick={() => setSidebarOpen(true)} className="bg-transparent border-none text-zinc-400 cursor-pointer p-1 flex lg:hidden hover:text-white transition-colors">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
+    </button>
+    <div className="flex items-center gap-2 text-[13px] text-zinc-500">
+    <span className="text-amber-400 font-semibold">{currentCompany?.name || "GesCo"}</span>
+    <span className="text-zinc-600 text-base">/</span>
+    <span className="text-white font-semibold text-[13px]">{navItems.find((i) => isActive(i.href))?.label || "Tableau de bord"}</span>
+    </div>
+    </div>
+    <div className="flex gap-2 items-center">
+    <div className="flex items-center gap-2.5 py-[5px] pl-1.5 pr-3.5 rounded-full border border-zinc-800 bg-[#1a1a1f]">
+    <div className="w-[30px] h-[30px] rounded-full bg-gradient-to-br from-amber-400 to-violet-500 flex items-center justify-center text-xs font-extrabold text-gray-950">
+    A
+    </div>
+    <span className="text-[13px] font-semibold text-white">Admin</span>
+    </div>
+    </div>
+    </header>
+
+    {/* Content */}
+    <main className="flex-1 overflow-auto p-7 bg-[#08080c]">
+    <div className="animate-fade-up">
+    {children}
+    </div>
+    </main>
+    </div>
+
+    {sheetOpen && <CompanySheet companies={companies} currentCompany={currentCompany} onSelect={switchCompany} onClose={() => setSheetOpen(false)} />}
     </div>
   );
 }
@@ -293,9 +163,9 @@ function LayoutContent({ children }: { children: ReactNode }) {
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <CompanyProvider>
-      <AppProvider>
-        <LayoutContent>{children}</LayoutContent>
-      </AppProvider>
+    <AppProvider>
+    <LayoutContent>{children}</LayoutContent>
+    </AppProvider>
     </CompanyProvider>
   );
 }

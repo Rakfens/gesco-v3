@@ -1,31 +1,33 @@
+// src/modules/shared/hooks/useLivraisons.ts
 "use client";
 
-// useLivraisons.ts — v2 : companyId passé au service, plus de race condition
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Livraison } from "@/modules/shared/types";
 import {
-  addLivraison,
-  deleteLivraison,
+  addLivraison as addLivraisonService,
+  deleteLivraison as deleteLivraisonService,
   fetchLivraisons,
-  updateLivraison,
-} from "../../livraison/services/livraisonService";
-import { useCompany } from "../context/CompanyContext";
+  updateLivraison as updateLivraisonService,
+} from "@/modules/livraison/services/livraisonService";
+import { useCompany } from "@/modules/shared/context/CompanyContext";
 
 interface UseLivraisonsReturn {
   livraisons: Livraison[];
   loading: boolean;
   error: string | null;
-  addLivraison: (livraison: Record<string, unknown>) => Promise<Livraison>;
+  addLivraison: (livraison: Partial<Livraison>) => Promise<Livraison>;
   updateLivraison: (id: string, updates: Partial<Livraison>) => Promise<void>;
   deleteLivraison: (id: string) => Promise<void>;
   reloadLivraisons: () => Promise<void>;
 }
 
-export const useLivraisons = (): UseLivraisonsReturn => {
+export function useLivraisons(): UseLivraisonsReturn {
   const [livraisons, setLivraisons] = useState<Livraison[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { currentCompany } = useCompany();
+
+  const mounted = useRef(true);
 
   const loadLivraisons = useCallback(async () => {
     if (!currentCompany?.id) {
@@ -33,70 +35,120 @@ export const useLivraisons = (): UseLivraisonsReturn => {
       setLoading(false);
       return;
     }
+
     try {
       setError(null);
+      setLoading(true);
       const data = await fetchLivraisons(currentCompany.id);
-      setLivraisons(data);
+      if (mounted.current) setLivraisons(data);
     } catch (err: unknown) {
-      setError((err as Error).message);
+      if (mounted.current) {
+        setError(err instanceof Error ? err.message : "Erreur lors du chargement des livraisons");
+      }
     } finally {
-      setLoading(false);
+      if (mounted.current) setLoading(false);
     }
   }, [currentCompany?.id]);
 
+  // Load initial + cleanup
   useEffect(() => {
+    mounted.current = true;
     loadLivraisons();
+    return () => {
+      mounted.current = false;
+    };
   }, [loadLivraisons]);
 
+  // Realtime sync
   useEffect(() => {
     const handler = (e: Event) => {
-      if ((e as CustomEvent).detail?.table === "livraisons") loadLivraisons();
+      if ((e as CustomEvent).detail?.table === "livraisons") {
+        loadLivraisons();
+      }
     };
     window.addEventListener("supabase_realtime", handler);
     return () => window.removeEventListener("supabase_realtime", handler);
   }, [loadLivraisons]);
 
-  const handleAddLivraison = async (livraison: Record<string, unknown>) => {
-    if (!currentCompany?.id) throw new Error("Société non sélectionnée");
-    const montant =
-      livraison.paiement === "client" ? 0 : parseFloat(livraison.montant as string) || 0;
-    const newLiv: Partial<Livraison> = {
-      colis: livraison.colis as string,
-      client_donneur: (livraison.client_donneur || livraison.client) as string,
-      destinataire: livraison.destinataire as string,
-      destinataire_telephone: (livraison.destinataire_telephone ||
-        livraison.telephone ||
-        "") as string,
-      destinataire_lieu: (livraison.destinataire_lieu || livraison.lieu || "") as string,
-      agent_id: String(livraison.agentId || livraison.agent_id || ""),
-      agent_nom: (livraison.agentNom || livraison.agent_nom || "—") as string,
-      montant,
-      frais: parseFloat(livraison.frais as string) || 0,
-      paiement: livraison.paiement as string,
-      date: livraison.date as string,
-      statut: (livraison.statut || "en_cours") as string,
-      remarque: (livraison.remarque || undefined) as string | undefined,
-    };
-    const data = await addLivraison(newLiv, currentCompany.id);
-    setLivraisons((prev) => [data, ...prev]);
-    return data;
-  };
+  const handleAddLivraison = useCallback(
+    async (livraison: Partial<Livraison>) => {
+      if (!currentCompany?.id) {
+        const msg = "Société non sélectionnée";
+        setError(msg);
+        throw new Error(msg);
+      }
 
-  const handleUpdateLivraison = async (id: string, updates: Partial<Livraison>) => {
-    const companyId = currentCompany?.id;
-    if (!companyId) throw new Error("Société non sélectionnée");
-    await updateLivraison(id, updates, companyId);
-    setLivraisons((prev) =>
-      prev.map((l) => (l.id === id ? ({ ...l, ...updates } as Livraison) : l)),
-    );
-  };
+      try {
+        setError(null);
 
-  const handleDeleteLivraison = async (id: string) => {
-    const companyId = currentCompany?.id;
-    if (!companyId) throw new Error("Société non sélectionnée");
-    await deleteLivraison(id, companyId);
-    setLivraisons((prev) => prev.filter((l) => l.id !== id));
-  };
+        // Normaliser les champs si nécessaire (compatibilité avec l'ancien format)
+        const normalized: Partial<Livraison> = {
+          ...livraison,
+          colis: livraison.colis?.trim(),
+                                         client_donneur: livraison.client_donneur?.trim(),
+                                         destinataire: livraison.destinataire?.trim(),
+                                         destinataire_telephone: livraison.destinataire_telephone?.trim(),
+                                         destinataire_lieu: livraison.destinataire_lieu?.trim(),
+                                         agent_nom: livraison.agent_nom?.trim(),
+                                         remarque: livraison.remarque?.trim() || undefined,
+                                         montant: livraison.paiement === "client" ? 0 : livraison.montant,
+        };
+
+        const data = await addLivraisonService(normalized, currentCompany.id);
+        setLivraisons((prev) => [data, ...prev]);
+        return data;
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Erreur lors de l'ajout";
+        setError(msg);
+        throw err;
+      }
+    },
+    [currentCompany?.id]
+  );
+
+  const handleUpdateLivraison = useCallback(
+    async (id: string, updates: Partial<Livraison>) => {
+      if (!currentCompany?.id) {
+        const msg = "Société non sélectionnée";
+        setError(msg);
+        throw new Error(msg);
+      }
+
+      try {
+        setError(null);
+        await updateLivraisonService(id, updates, currentCompany.id);
+        setLivraisons((prev) =>
+        prev.map((l) => (l.id === id ? { ...l, ...updates } as Livraison : l))
+        );
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Erreur lors de la mise à jour";
+        setError(msg);
+        throw err;
+      }
+    },
+    [currentCompany?.id]
+  );
+
+  const handleDeleteLivraison = useCallback(
+    async (id: string) => {
+      if (!currentCompany?.id) {
+        const msg = "Société non sélectionnée";
+        setError(msg);
+        throw new Error(msg);
+      }
+
+      try {
+        setError(null);
+        await deleteLivraisonService(id, currentCompany.id);
+        setLivraisons((prev) => prev.filter((l) => l.id !== id));
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Erreur lors de la suppression";
+        setError(msg);
+        throw err;
+      }
+    },
+    [currentCompany?.id]
+  );
 
   return {
     livraisons,
@@ -107,4 +159,4 @@ export const useLivraisons = (): UseLivraisonsReturn => {
     deleteLivraison: handleDeleteLivraison,
     reloadLivraisons: loadLivraisons,
   };
-};
+}

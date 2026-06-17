@@ -8,39 +8,36 @@ interface NavItem {
   label: string;
 }
 
-// Navigation pour Aterinay Service (livraison)
 const serviceNavItems: NavItem[] = [
   { key: "dashboard", icon: "📊", label: "Accueil" },
-  { key: "livraison", icon: "📦", label: "Livraison" },
-  { key: "historique", icon: "📋", label: "Historique" },
-  { key: "gerant", icon: "🧑‍💼", label: "Gérant" },
-  { key: "recap", icon: "📈", label: "Récap" },
-  { key: "agents", icon: "👥", label: "Agents" },
-  { key: "recuperation", icon: "📦", label: "Récupération" },
+{ key: "livraison", icon: "📦", label: "Livraison" },
+{ key: "historique", icon: "📋", label: "Historique" },
+{ key: "gerant", icon: "🧑‍💼", label: "Gérant" },
+{ key: "recap", icon: "📈", label: "Récap" },
+{ key: "agents", icon: "👥", label: "Agents" },
+{ key: "recuperation", icon: "📦", label: "Récupération" },
 ];
 
-// Navigation pour Pomanay (commerce avec dépenses)
 const pomanayNavItems: NavItem[] = [
   { key: "dashboard", icon: "📊", label: "Accueil" },
-  { key: "ventes", icon: "💰", label: "Ventes" },
-  { key: "achats", icon: "📥", label: "Achats" },
-  { key: "stock", icon: "📦", label: "Stock" },
-  { key: "packs", icon: "🎁", label: "Packs" },
-  { key: "inventaire", icon: "📋", label: "Inventaire" },
-  { key: "depenses", icon: "💸", label: "Dépenses" },
-  { key: "rapports", icon: "📈", label: "Rapports" },
+{ key: "ventes", icon: "💰", label: "Ventes" },
+{ key: "achats", icon: "📥", label: "Achats" },
+{ key: "stock", icon: "📦", label: "Stock" },
+{ key: "packs", icon: "🎁", label: "Packs" },
+{ key: "inventaire", icon: "📋", label: "Inventaire" },
+{ key: "depenses", icon: "💸", label: "Dépenses" },
+{ key: "rapports", icon: "📈", label: "Rapports" },
 ];
 
-// Navigation pour Zazatiana (commerce sans dépenses)
 const zazatianaNavItems: NavItem[] = [
   { key: "dashboard", icon: "📊", label: "Accueil" },
-  { key: "ventes", icon: "💰", label: "Ventes" },
-  { key: "achats", icon: "📥", label: "Achats" },
-  { key: "stock", icon: "📦", label: "Stock" },
-  { key: "packs", icon: "🎁", label: "Packs" },
-  { key: "inventaire", icon: "📋", label: "Inventaire" },
-  { key: "depenses", icon: "💰", label: "Dépenses" },
-  { key: "rapports", icon: "📈", label: "Rapports" },
+{ key: "ventes", icon: "💰", label: "Ventes" },
+{ key: "achats", icon: "📥", label: "Achats" },
+{ key: "stock", icon: "📦", label: "Stock" },
+{ key: "packs", icon: "🎁", label: "Packs" },
+{ key: "inventaire", icon: "📋", label: "Inventaire" },
+{ key: "depenses", icon: "💸", label: "Dépenses" },
+{ key: "rapports", icon: "📈", label: "Rapports" },
 ];
 
 interface SidebarProps {
@@ -49,7 +46,7 @@ interface SidebarProps {
   enCours: number;
 }
 
-export const Sidebar = ({ page, onNavigate, enCours }: SidebarProps) => {
+export function Sidebar({ page, onNavigate, enCours }: SidebarProps) {
   const { currentCompany } = useCompany();
 
   const getNavItems = (): NavItem[] => {
@@ -61,131 +58,62 @@ export const Sidebar = ({ page, onNavigate, enCours }: SidebarProps) => {
   };
 
   const navItems = getNavItems();
-
   if (!currentCompany || navItems.length === 0) return null;
 
+  const companyLabel =
+  currentCompany.type === "service"
+  ? "🚚 LIVRAISON"
+  : currentCompany.slug === "pomanay"
+  ? "📱 BOUTIQUE"
+  : "👶 BOUTIQUE";
+
   return (
-    <aside
-      style={{
-        width: "var(--sidebar-w)",
-        background: "var(--card)",
-        borderRight: "1px solid var(--border)",
-        flexShrink: 0,
-        display: "flex",
-        flexDirection: "column",
-        position: "sticky",
-        top: "var(--header-h)",
-        height: "calc(100vh - var(--header-h))",
-        overflowY: "auto",
-      }}
-    >
-      {/* En-tête avec le nom de la société */}
-      <div
-        style={{
-          padding: "14px 16px",
-          borderBottom: "1px solid var(--border)",
-          marginBottom: 8,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: "var(--muted)",
-            textTransform: "uppercase",
-            letterSpacing: "0.5px",
-          }}
-        >
-          {currentCompany.type === "service"
-            ? "🚚 LIVRAISON"
-            : currentCompany.slug === "pomanay"
-              ? "📱 BOUTIQUE"
-              : "👶 BOUTIQUE"}
-        </div>
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 700,
-            color: "#f1f5f9",
-            marginTop: 4,
-          }}
-        >
-          {currentCompany.name}
-        </div>
-      </div>
+    <aside className="sticky top-16 flex h-[calc(100vh-64px)] w-[270px] shrink-0 flex-col overflow-y-auto border-r border-white/[0.06] bg-[#121218]">
+    {/* En-tête */}
+    <div className="mb-2 border-b border-white/[0.06] px-4 py-3.5">
+    <div className="text-[10px] font-bold uppercase tracking-wider text-[#6b6b7b]">
+    {companyLabel}
+    </div>
+    <div className="mt-1 text-sm font-bold text-[#f1f5f9]">
+    {currentCompany.name}
+    </div>
+    </div>
 
-      <nav
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
-          padding: "8px 12px",
-          flex: 1,
-        }}
-      >
-        {navItems.map((item) => (
-          <button
-            key={item.key}
-            onClick={() => onNavigate(item.key)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "10px 14px",
-              borderRadius: 10,
-              border: "none",
-              background: page === item.key ? "var(--accent-dim)" : "transparent",
-              color: page === item.key ? "var(--accent)" : "var(--text2)",
-              fontSize: 13,
-              fontWeight: page === item.key ? 600 : 400,
-              cursor: "pointer",
-              textAlign: "left",
-              transition: "all 0.15s ease",
-            }}
-            onMouseEnter={(e) => {
-              if (page !== item.key) {
-                (e.currentTarget as HTMLElement).style.background = "var(--bg-tertiary)";
-                (e.currentTarget as HTMLElement).style.color = "var(--text)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (page !== item.key) {
-                (e.currentTarget as HTMLElement).style.background = "transparent";
-                (e.currentTarget as HTMLElement).style.color = "var(--text2)";
-              }
-            }}
+    {/* Navigation */}
+    <nav className="flex flex-1 flex-col gap-0.5 px-3 py-2">
+    {navItems.map((item) => {
+      const active = page === item.key;
+      return (
+        <button
+        key={item.key}
+        type="button"
+        onClick={() => onNavigate(item.key)}
+        className={`
+          flex items-center gap-3 rounded-[10px] border-none px-3.5 py-2.5 text-left text-[13px] transition-all duration-150
+          ${active
+            ? "bg-[#c9a96e]/10 font-semibold text-[#c9a96e]"
+            : "bg-transparent font-normal text-[#a0a0b0] hover:bg-[#141418] hover:text-[#e8e8ec]"
+          }
+          `}
           >
-            <span style={{ fontSize: 16, width: 24, textAlign: "center" }}>{item.icon}</span>
-            <span>{item.label}</span>
-            {item.key === "historique" && enCours > 0 && (
-              <span
-                style={{
-                  marginLeft: "auto",
-                  background: "#f59e0b",
-                  color: "#000",
-                  padding: "2px 8px",
-                  fontSize: 10,
-                  borderRadius: 20,
-                  fontWeight: 600,
-                }}
-              >
-                {enCours}
-              </span>
-            )}
+          <span className="w-6 text-center text-base">{item.icon}</span>
+          <span>{item.label}</span>
+          {item.key === "historique" && enCours > 0 && (
+            <span className="ml-auto rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold text-black">
+            {enCours}
+            </span>
+          )}
           </button>
-        ))}
-      </nav>
+      );
+    })}
+    </nav>
 
-      <div
-        style={{
-          padding: "12px 16px",
-          borderTop: "1px solid var(--border)",
-          fontSize: 10,
-          color: "var(--muted)",
-        }}
-      >
-        🔒 Données sécurisées
-      </div>
+    {/* Footer */}
+    <div className="border-t border-white/[0.06] px-4 py-3 text-[10px] text-[#6b6b7b]">
+    🔒 Données sécurisées
+    </div>
     </aside>
   );
-};
+}
+
+export default Sidebar;

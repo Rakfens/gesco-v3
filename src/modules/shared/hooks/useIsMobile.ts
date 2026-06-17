@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+// src/modules/shared/hooks/useIsMobile.ts
+import { useEffect, useState, useCallback } from "react";
 
 /**
  * SSR-safe mobile detection.
@@ -9,13 +10,17 @@ export function useIsMobile(breakpoint = 768): boolean {
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  const checkMobile = useCallback(() => {
+    setIsMobile(window.innerWidth < breakpoint);
+  }, [breakpoint]);
+
   useEffect(() => {
     setMounted(true);
-    const fn = () => setIsMobile(window.innerWidth < breakpoint);
-    fn();
-    window.addEventListener("resize", fn);
-    return () => window.removeEventListener("resize", fn);
-  }, [breakpoint]);
+    checkMobile();
+
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, [checkMobile]);
 
   // Return false during SSR, real value after mount
   return mounted ? isMobile : false;

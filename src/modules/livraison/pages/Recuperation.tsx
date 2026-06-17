@@ -1,31 +1,33 @@
+// src/modules/livraison/pages/Recuperation.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { logger } from "@/lib/logger";
 import {
-  Button, Card, CardHeader, CardTitle, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select, StatCard,
+  Button,
+  Card,
+  CardHeader,
+  CardTitle,
+  Input,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Select,
+  StatCard,
 } from "@/modules/shared/components/ui";
 import { useApp } from "@/modules/shared/context/AppContext";
+import { useCompany } from "@/modules/shared/context/CompanyContext";
 import { useIsMobile } from "@/modules/shared/hooks/useIsMobile";
 import type { Recuperation as RecupType } from "@/modules/shared/types";
 import { formatAr, TODAY } from "@/modules/shared/utils/constants";
-import { addRecuperation, deleteRecuperation, getRecuperationsByDate, updateRecuperation } from "../services/recuperationService";
-
-/* ─── Colors ─── */
-const C = {
-  gold: "#c9a96e", goldDim: "rgba(201,169,110,0.1)",
-  success: "#34d399", successDim: "rgba(52,211,153,0.1)",
-  warning: "#fbbf24", warningDim: "rgba(251,191,36,0.1)",
-  danger: "#f87171", dangerDim: "rgba(248,113,113,0.1)",
-  violet: "#8b5cf6", violetDim: "rgba(139,92,246,0.1)",
-  teal: "#2dd4bf", tealDim: "rgba(45,212,191,0.1)",
-};
-
-const Icon = ({ d, size = 16, color = "currentColor" }: { d: string; size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d={d} />
-  </svg>
-);
+import {
+  addRecuperation,
+  deleteRecuperation,
+  getRecuperationsByDate,
+  updateRecuperation,
+} from "../services/recuperationService";
+import { Icon } from "@/modules/shared/components/ui/Icons";
 
 interface RecupParLivreur {
   livreur: string;
@@ -36,10 +38,17 @@ interface RecupParLivreur {
 export default function Recuperation() {
   const { agents, showToast } = useApp();
   const isMobile = useIsMobile();
+  const { currentCompany } = useCompany();
+  const companyId = currentCompany?.id;
 
   const [recuperations, setRecuperations] = useState<RecupType[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(TODAY());
-  const [form, setForm] = useState({ livreur_id: "", livreur_nom: "", client_donneur: "", frais_recuperation: 1000 });
+  const [form, setForm] = useState({
+    livreur_id: "",
+    livreur_nom: "",
+    client_donneur: "",
+    frais_recuperation: 1000,
+  });
   const [editId, setEditId] = useState<string | null>(null);
   const [editData, setEditData] = useState({ client_donneur: "", frais_recuperation: 0 });
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -48,21 +57,26 @@ export default function Recuperation() {
 
   const safeAgents = Array.isArray(agents) ? agents : [];
 
-  const loadRecuperations = async () => {
+  const loadRecuperations = useCallback(async () => {
+    if (!companyId) return;
     setLoading(true);
     try {
-      const data = await getRecuperationsByDate(selectedDate);
+      const data = await getRecuperationsByDate(selectedDate, companyId);
       setRecuperations(data || []);
     } catch (error: unknown) {
       logger.error("Erreur chargement:", error);
       showToast("Erreur lors du chargement.", "error");
-    } finally { setLoading(false); }
-  };
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedDate, companyId, showToast]);
 
-  useEffect(() => { loadRecuperations(); }, [selectedDate]);
+  useEffect(() => {
+    loadRecuperations();
+  }, [loadRecuperations]);
 
   // Regrouper par livreur
-  const recuperationsParLivreur: Record<string, RecupParLivreur> = useMemo(() => {
+  const recuperationsParLivreur = useMemo(() => {
     return recuperations.reduce((acc, r) => {
       const nom = r.livreur_nom;
       if (!acc[nom]) acc[nom] = { livreur: nom, recuperations: [], totalGain: 0 };
@@ -76,188 +90,329 @@ export default function Recuperation() {
   const totalRecuperations = recuperations.length;
 
   const handleAdd = async () => {
-    if (!form.livreur_id || !form.client_donneur) { showToast("Livreur et client requis", "error"); return; }
-    if (form.frais_recuperation <= 0) { showToast("Le frais doit être > 0", "error"); return; }
+    if (!companyId) {
+      showToast("Aucune société sélectionnée", "error");
+      return;
+    }
+    if (!form.livreur_id || !form.client_donneur) {
+      showToast("Livreur et client requis", "error");
+      return;
+    }
+    if (form.frais_recuperation <= 0) {
+      showToast("Le frais doit être > 0", "error");
+      return;
+    }
     const agent = safeAgents.find((a) => a.id === form.livreur_id);
-    if (!agent) { showToast("Livreur invalide", "error"); return; }
+    if (!agent) {
+      showToast("Livreur invalide", "error");
+      return;
+    }
     setSaving(true);
     try {
-      await addRecuperation({
-        date: selectedDate, livreur_id: form.livreur_id, livreur_nom: agent.nom,
-        client_donneur: form.client_donneur, frais_recuperation: form.frais_recuperation,
+      await addRecuperation(
+        {
+          date: selectedDate,
+          livreur_id: form.livreur_id,
+          livreur_nom: agent.nom,
+          client_donneur: form.client_donneur,
+          frais_recuperation: form.frais_recuperation,
+        },
+        companyId
+      );
+      setForm({
+        livreur_id: "",
+        livreur_nom: "",
+        client_donneur: "",
+        frais_recuperation: 1000,
       });
-      setForm({ livreur_id: "", livreur_nom: "", client_donneur: "", frais_recuperation: 1000 });
       await loadRecuperations();
       showToast("Récupération ajoutée");
-    } catch (error: unknown) { logger.error("Erreur ajout:", error); showToast("Erreur lors de l'ajout.", "error"); }
-    finally { setSaving(false); }
+    } catch (error: unknown) {
+      logger.error("Erreur ajout:", error);
+      showToast("Erreur lors de l'ajout.", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleUpdate = async () => {
+    if (!companyId) {
+      showToast("Aucune société sélectionnée", "error");
+      return;
+    }
     if (editId === null) return;
-    if (editData.frais_recuperation <= 0) { showToast("Le frais doit être > 0", "error"); return; }
+    if (editData.frais_recuperation <= 0) {
+      showToast("Le frais doit être > 0", "error");
+      return;
+    }
     setSaving(true);
     try {
-      await updateRecuperation(editId, { frais_recuperation: editData.frais_recuperation });
+      await updateRecuperation(
+        editId,
+        { frais_recuperation: editData.frais_recuperation },
+        companyId
+      );
       setEditId(null);
       await loadRecuperations();
       showToast("Récupération modifiée");
-    } catch (error: unknown) { logger.error("Erreur modif:", error); showToast("Erreur lors de la modification.", "error"); }
-    finally { setSaving(false); }
+    } catch (error: unknown) {
+      logger.error("Erreur modif:", error);
+      showToast("Erreur lors de la modification.", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const executeDelete = async () => {
+    if (!companyId) {
+      showToast("Aucune société sélectionnée", "error");
+      return;
+    }
     if (!confirmDelete) return;
     const id = confirmDelete;
     setConfirmDelete(null);
     setSaving(true);
-    try { await deleteRecuperation(id); await loadRecuperations(); showToast("Récupération supprimée", "warn"); }
-    catch { showToast("Erreur", "error"); }
-    finally { setSaving(false); }
+    try {
+      await deleteRecuperation(id, companyId);
+      await loadRecuperations();
+      showToast("Récupération supprimée", "warn");
+    } catch {
+      showToast("Erreur", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const agentOptions = useMemo(() => safeAgents.map((a) => ({ value: a.id, label: a.nom })), [safeAgents]);
+  const agentOptions = useMemo(
+    () => safeAgents.map((a) => ({ value: a.id, label: a.nom })),
+                               [safeAgents]
+  );
 
   return (
-    <div className="fadeUp" style={{ animation: "fadeUp 0.4s ease both", paddingBottom: 24 }}>
+    <div className="pb-6 animate-fade-up">
+    {/* ══ HEADER ══ */}
+    <header className="mb-5">
+    <div className="flex items-center gap-2.5 mb-1">
+    <div className="w-9 h-9 rounded-[10px] flex items-center justify-center bg-teal-400/10">
+    <Icon
+    d="M1 4v6h6M23 20v-6h-6M20.49 9A9 9 0 1015.24 4.76L23 9"
+    size={18}
+    className="text-teal-400"
+    />
+    </div>
+    <div>
+    <h1 className={`font-extrabold m-0 text-[var(--text)] ${isMobile ? "text-xl" : "text-2xl"}`}>
+    Récupération matinale
+    </h1>
+    <p className="text-xs text-[var(--text-muted)] mt-0.5">
+    Frais de récupération par livreur
+    </p>
+    </div>
+    </div>
+    </header>
 
-      {/* ══ HEADER ══ */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: C.tealDim, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Icon d="M1 4v6h6M23 20v-6h-6M20.49 9A9 9 0 1015.24 4.76L23 9" size={18} color={C.teal} />
+    {/* ══ STATS ══ */}
+    <div className={`grid gap-2.5 mb-4 ${isMobile ? "grid-cols-2" : "grid-cols-3"}`}>
+    <StatCard
+    label="Total du jour"
+    value={formatAr(totalGains)}
+    className="text-teal-400"
+    icon={<Icon d="M12 1v22M17 5H9.5a3.5 3.5 0 010-7h5a3.5 3.5 0 000 7H6M17 19h-5.5a3.5 3.5 0 010-7H19" size={18} className="text-teal-400" />}
+    />
+    <StatCard
+    label="Récupérations"
+    value={totalRecuperations}
+    className="text-amber-400"
+    icon={<Icon d="M1 4v6h6M23 20v-6h-6M20.49 9A9 9 0 1015.24 4.76L23 9" size={18} className="text-amber-400" />}
+    />
+    <StatCard
+    label="Livreurs actifs"
+    value={Object.keys(recuperationsParLivreur).length}
+    className="text-violet-400"
+    icon={<Icon d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8z" size={18} className="text-violet-400" />}
+    />
+    </div>
+
+    {/* ══ SÉLECTEUR DATE ══ */}
+    <Card className="mb-4">
+    <div className="flex gap-2.5 items-end flex-wrap">
+    <Input
+    type="date"
+    label="Date"
+    value={selectedDate}
+    onChange={(e) => setSelectedDate(e.target.value)}
+    className="max-w-[200px]"
+    />
+    <Button
+    variant="secondary"
+    size="sm"
+    onClick={loadRecuperations}
+    loading={loading}
+    disabled={loading}
+    >
+    Actualiser
+    </Button>
+    </div>
+    </Card>
+
+    {/* ══ FORMULAIRE AJOUT ══ */}
+    <Card className="mb-4">
+    <CardHeader>
+    <CardTitle>Ajouter une récupération</CardTitle>
+    </CardHeader>
+    <div className={`grid gap-2.5 items-end ${isMobile ? "grid-cols-1" : "grid-cols-[1fr_1fr_1fr_auto]"}`}>
+    <Select
+    label="Livreur"
+    value={form.livreur_id}
+    onChange={(e) => {
+      const id = e.target.value;
+      const agent = safeAgents.find((a) => a.id === id);
+      setForm({ ...form, livreur_id: id, livreur_nom: agent?.nom || "" });
+    }}
+    options={[{ value: "", label: "-- Choisir --" }, ...agentOptions]}
+    />
+    <Input
+    label="Client donneur"
+    placeholder="Ex: SARL TECH"
+    value={form.client_donneur}
+    onChange={(e) => setForm({ ...form, client_donneur: e.target.value })}
+    />
+    <Input
+    type="number"
+    label="Frais (Ar)"
+    placeholder="1000"
+    value={String(form.frais_recuperation)}
+    onChange={(e) => setForm({ ...form, frais_recuperation: Number(e.target.value) || 0 })}
+    />
+    <Button variant="success" onClick={handleAdd} loading={saving} disabled={saving}>
+    Ajouter
+    </Button>
+    </div>
+    </Card>
+
+    {/* ══ LISTE PAR LIVREUR ══ */}
+    {loading ? (
+      <div className="text-center text-[var(--text-muted)] py-5">Chargement...</div>
+    ) : Object.keys(recuperationsParLivreur).length === 0 ? (
+      <Card className="py-10">
+      <div className="text-center text-sm text-[var(--text-muted)]">
+      <div className="text-3xl mb-2">🔄</div>
+      Aucune récupération pour cette date.
+      </div>
+      </Card>
+    ) : (
+      <div className="flex flex-col gap-3">
+      {Object.values(recuperationsParLivreur)
+        .sort((a, b) => b.totalGain - a.totalGain)
+        .map((rl) => (
+          <Card key={rl.livreur} className="overflow-hidden">
+          {/* Header livreur */}
+          <div className="px-4 py-3.5 border-b border-[var(--border)] flex items-center justify-between bg-gradient-to-br from-teal-400/5 to-amber-400/5">
+          <div className="flex items-center gap-2.5">
+          <div className="w-[38px] h-[38px] rounded-full flex items-center justify-center font-extrabold text-base text-[#08080c] flex-shrink-0 bg-gradient-to-br from-teal-400 to-amber-400 shadow-[0_4px_12px_rgba(45,212,191,0.2)]">
+          {rl.livreur.charAt(0)}
           </div>
           <div>
-            <h1 style={{ fontSize: isMobile ? 20 : 24, fontWeight: 800, color: "var(--text)", margin: 0 }}>Récupération matinale</h1>
-            <p style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 1 }}>Frais de récupération par livreur</p>
+          <div className="font-bold text-sm text-[var(--text)]">{rl.livreur}</div>
+          <div className="text-[11px] text-[var(--text-muted)]">
+          {rl.recuperations.length} récupération
+          {rl.recuperations.length !== 1 ? "s" : ""}
           </div>
-        </div>
-      </div>
-
-      {/* ══ STATS ══ */}
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3, 1fr)", gap: 10, marginBottom: 16 }}>
-        <StatCard label="Total du jour" value={formatAr(totalGains)} color={C.teal} icon={<Icon d="M12 1v22M17 5H9.5a3.5 3.5 0 010-7h5a3.5 3.5 0 000 7H6M17 19h-5.5a3.5 3.5 0 010-7H19" size={18} color={C.teal} />} />
-        <StatCard label="Récupérations" value={totalRecuperations} color={C.gold} icon={<Icon d="M1 4v6h6M23 20v-6h-6M20.49 9A9 9 0 1015.24 4.76L23 9" size={18} color={C.gold} />} />
-        <StatCard label="Livreurs actifs" value={Object.keys(recuperationsParLivreur).length} color={C.violet} icon={<Icon d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8z" size={18} color={C.violet} />} />
-      </div>
-
-      {/* ══ SÉLECTEUR DATE ══ */}
-      <Card style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
-          <Input type="date" label="Date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} style={{ maxWidth: 200 }} />
-          <Button variant="secondary" size="sm" onClick={loadRecuperations} loading={loading} disabled={loading}>
-            Actualiser
-          </Button>
-        </div>
-      </Card>
-
-      {/* ══ FORMULAIRE AJOUT ══ */}
-      <Card style={{ marginBottom: 16 }}>
-        <CardHeader><CardTitle>Ajouter une récupération</CardTitle></CardHeader>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr auto", gap: 10, alignItems: "end" }}>
-          <Select label="Livreur" value={form.livreur_id}
-            onChange={(e) => {
-              const id = e.target.value;
-              const agent = safeAgents.find((a) => a.id === id);
-              setForm({ ...form, livreur_id: id, livreur_nom: agent?.nom || "" });
+          </div>
+          </div>
+          <div className="text-base font-extrabold text-teal-400">
+          {formatAr(rl.totalGain)}
+          </div>
+          </div>
+          {/* Détails */}
+          <div className="px-4 py-2.5">
+          {rl.recuperations.map((r) => (
+            <div
+            key={r.id}
+            className="flex items-center gap-2.5 py-2 border-b border-[var(--border)] last:border-b-0"
+            >
+            <div className="flex-1">
+            <div className="font-semibold text-xs text-[var(--text)]">
+            {r.client_donneur}
+            </div>
+            <div className="text-[10px] text-[var(--text-muted)]">{r.date}</div>
+            </div>
+            <div className="text-[13px] font-bold text-emerald-400">
+            {formatAr(r.frais_recuperation)}
+            </div>
+            <button
+            onClick={() => {
+              setEditId(r.id);
+              setEditData({
+                client_donneur: r.client_donneur,
+                frais_recuperation: r.frais_recuperation ?? 0,
+              });
             }}
-            options={[{ value: "", label: "-- Choisir --" }, ...agentOptions]} />
-          <Input label="Client donneur" placeholder="Ex: SARL TECH" value={form.client_donneur}
-            onChange={(e) => setForm({ ...form, client_donneur: e.target.value })} />
-          <Input type="number" label="Frais (Ar)" placeholder="1000" value={String(form.frais_recuperation)}
-            onChange={(e) => setForm({ ...form, frais_recuperation: Number(e.target.value) || 0 })} />
-          <Button variant="success" onClick={handleAdd} loading={saving} disabled={saving}>Ajouter</Button>
-        </div>
-      </Card>
-
-      {/* ══ LISTE PAR LIVREUR ══ */}
-      {loading ? (
-        <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 20 }}>Chargement...</div>
-      ) : Object.keys(recuperationsParLivreur).length === 0 ? (
-        <Card padding={40}>
-          <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>🔄</div>
-            Aucune récupération pour cette date.
+            className="w-7 h-7 rounded-md flex items-center justify-center text-xs cursor-pointer border bg-[var(--bg-secondary)] border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--text-muted)] transition-colors"
+            >
+            ✏️
+            </button>
+            <button
+            onClick={() => setConfirmDelete(r.id)}
+            className="w-7 h-7 rounded-md flex items-center justify-center text-xs cursor-pointer border bg-red-50 border-red-200/50 text-red-400 hover:bg-red-100 hover:text-red-500 transition-colors"
+            >
+            🗑
+            </button>
+            </div>
+          ))}
           </div>
-        </Card>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {Object.values(recuperationsParLivreur)
-            .sort((a, b) => b.totalGain - a.totalGain)
-            .map((rl) => (
-              <Card key={rl.livreur} padding={0} style={{ overflow: "hidden" }}>
-                {/* Header livreur */}
-                <div style={{
-                  background: "linear-gradient(135deg, rgba(45,212,191,0.06) 0%, rgba(201,169,110,0.04) 100%)",
-                  padding: "14px 16px", borderBottom: "1px solid var(--border)",
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{
-                      width: 38, height: 38, borderRadius: "50%",
-                      background: "linear-gradient(135deg, #2dd4bf, #c9a96e)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontWeight: 800, fontSize: 16, color: "#08080c",
-                      boxShadow: "0 4px 12px rgba(45,212,191,0.2)", flexShrink: 0,
-                    }}>
-                      {rl.livreur.charAt(0)}
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)" }}>{rl.livreur}</div>
-                      <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{rl.recuperations.length} récupération{rl.recuperations.length !== 1 ? "s" : ""}</div>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: C.teal }}>{formatAr(rl.totalGain)}</div>
-                </div>
-
-                {/* Détails */}
-                <div style={{ padding: "10px 16px" }}>
-                  {rl.recuperations.map((r) => (
-                    <div key={r.id} style={{
-                      display: "flex", alignItems: "center", gap: 10, padding: "8px 0",
-                      borderBottom: "1px solid var(--border)",
-                    }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 600, fontSize: 12, color: "var(--text)" }}>{r.client_donneur}</div>
-                        <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{r.date}</div>
-                      </div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: C.success }}>{formatAr(r.frais_recuperation)}</div>
-                      <button onClick={() => { setEditId(r.id); setEditData({ client_donneur: r.client_donneur, frais_recuperation: r.frais_recuperation ?? 0 }); }}
-                        style={{ width: 28, height: 28, borderRadius: 6, background: "var(--bg-secondary)", border: "1px solid var(--border)", color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>✏️</button>
-                      <button onClick={() => setConfirmDelete(r.id)}
-                        style={{ width: 28, height: 28, borderRadius: 6, background: C.dangerDim, border: "1px solid rgba(248,113,113,0.2)", color: C.danger, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>🗑</button>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            ))}
+          </Card>
+        ))}
         </div>
-      )}
+    )}
 
-      {/* ══ MODAL ÉDITION ══ */}
-      <Modal open={!!editId} onClose={() => setEditId(null)}>
-        <ModalHeader title="Modifier la récupération" onClose={() => setEditId(null)} />
-        <ModalBody>
-          <div style={{ display: "grid", gap: 10 }}>
-            <Input label="Client donneur" value={editData.client_donneur} onChange={(e) => setEditData({ ...editData, client_donneur: e.target.value })} />
-            <Input type="number" label="Frais (Ar)" value={String(editData.frais_recuperation)} onChange={(e) => setEditData({ ...editData, frais_recuperation: Number(e.target.value) || 0 })} />
-          </div>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={() => setEditId(null)}>Annuler</Button>
-          <Button variant="primary" onClick={handleUpdate} loading={saving}>Enregistrer</Button>
-        </ModalFooter>
-      </Modal>
+    {/* ══ MODAL ÉDITION ══ */}
+    <Modal open={!!editId} onClose={() => setEditId(null)}>
+    <ModalHeader title="Modifier la récupération" onClose={() => setEditId(null)} />
+    <ModalBody>
+    <div className="grid gap-2.5">
+    <Input
+    label="Client donneur"
+    value={editData.client_donneur}
+    onChange={(e) => setEditData({ ...editData, client_donneur: e.target.value })}
+    />
+    <Input
+    type="number"
+    label="Frais (Ar)"
+    value={String(editData.frais_recuperation)}
+    onChange={(e) =>
+      setEditData({ ...editData, frais_recuperation: Number(e.target.value) || 0 })
+    }
+    />
+    </div>
+    </ModalBody>
+    <ModalFooter>
+    <Button variant="secondary" onClick={() => setEditId(null)}>
+    Annuler
+    </Button>
+    <Button variant="primary" onClick={handleUpdate} loading={saving}>
+    Enregistrer
+    </Button>
+    </ModalFooter>
+    </Modal>
 
-      {/* ══ MODAL SUPPRESSION ══ */}
-      <Modal open={!!confirmDelete} onClose={() => setConfirmDelete(null)}>
-        <ModalHeader title="Supprimer ?" onClose={() => setConfirmDelete(null)} />
-        <ModalBody><p style={{ fontSize: 13, color: "var(--text-secondary)" }}>Cette récupération sera supprimée définitivement.</p></ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Annuler</Button>
-          <Button variant="danger" onClick={executeDelete} loading={saving}>Supprimer</Button>
-        </ModalFooter>
-      </Modal>
+    {/* ══ MODAL SUPPRESSION ══ */}
+    <Modal open={!!confirmDelete} onClose={() => setConfirmDelete(null)}>
+    <ModalHeader title="Supprimer ?" onClose={() => setConfirmDelete(null)} />
+    <ModalBody>
+    <p className="text-[13px] text-[var(--text-secondary)]">
+    Cette récupération sera supprimée définitivement.
+    </p>
+    </ModalBody>
+    <ModalFooter>
+    <Button variant="secondary" onClick={() => setConfirmDelete(null)}>
+    Annuler
+    </Button>
+    <Button variant="danger" onClick={executeDelete} loading={saving}>
+    Supprimer
+    </Button>
+    </ModalFooter>
+    </Modal>
     </div>
   );
 }

@@ -1,18 +1,17 @@
 import { logger } from "@/lib/logger";
 
-export const exportToCSV = (
+export function exportToCSV(
   data: Record<string, unknown>[],
   headers: string[],
   filename: string,
   options: { separator?: string; encoding?: string; includeHeaders?: boolean } = {},
-): void => {
+): void {
   if (!data?.length) {
     logger.warn("Aucune donnée à exporter");
     return;
   }
 
   const { separator = ",", encoding = "\uFEFF", includeHeaders = true } = options;
-
   const rows: string[] = [];
 
   if (includeHeaders) {
@@ -24,9 +23,9 @@ export const exportToCSV = (
       let value = row[header];
       if (typeof value === "object" && value !== null) {
         value =
-          (value as Record<string, unknown>).label ||
-          (value as Record<string, unknown>).name ||
-          JSON.stringify(value);
+        (value as Record<string, unknown>).label ||
+        (value as Record<string, unknown>).name ||
+        JSON.stringify(value);
       }
       return formatCSVCell(value);
     });
@@ -40,23 +39,16 @@ export const exportToCSV = (
   const link = document.createElement("a");
   link.href = url;
   link.download = `${filename}.csv`;
-  link.style.display = "none";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-
   URL.revokeObjectURL(url);
-};
+}
 
 const formatCSVCell = (value: unknown): string => {
-  if (value === null || value === undefined) {
-    return "";
-  }
-
+  if (value === null || value === undefined) return "";
   let stringValue = String(value);
-
   stringValue = stringValue.replace(/"/g, '""');
-
   if (
     stringValue.includes(",") ||
     stringValue.includes('"') ||
@@ -65,142 +57,126 @@ const formatCSVCell = (value: unknown): string => {
   ) {
     stringValue = `"${stringValue}"`;
   }
-
   return stringValue;
 };
 
+// ── Helpers d'export ───────────────────────────────────────────────────
+
+const makeFilename = (prefix: string, companyName: string): string =>
+`${prefix}_${companyName}_${new Date().toISOString().split("T")[0]}`;
+
 export const exportLivraisonsToCSV = (
   livraisons: Record<string, unknown>[],
-  companyName: string = "aterinay",
+  companyName = "aterinay",
 ): void => {
-  const headers = [
-    "id",
-    "colis",
-    "client_donneur",
-    "destinataire",
-    "destinataire_telephone",
-    "agent_nom",
-    "montant",
-    "frais",
-    "paiement",
-    "date",
-    "statut",
-  ];
-  const filename = `livraisons_${companyName}_${new Date().toISOString().split("T")[0]}`;
-  exportToCSV(livraisons, headers, filename);
+  exportToCSV(
+    livraisons,
+    [
+      "id", "colis", "client_donneur", "destinataire",
+      "destinataire_telephone", "agent_nom", "montant", "frais",
+      "paiement", "date", "statut",
+    ],
+    makeFilename("livraisons", companyName),
+  );
 };
 
 export const exportAgentsToCSV = (
   agents: Record<string, unknown>[],
-  companyName: string = "aterinay",
+  companyName = "aterinay",
 ): void => {
-  const headers = ["id", "nom", "salaire", "created_at"];
-  const filename = `agents_${companyName}_${new Date().toISOString().split("T")[0]}`;
-  exportToCSV(agents, headers, filename);
+  exportToCSV(agents, ["id", "nom", "salaire", "created_at"], makeFilename("agents", companyName));
 };
 
 export const exportAvancesToCSV = (
   avances: Record<string, unknown>[],
-  companyName: string = "aterinay",
+  companyName = "aterinay",
 ): void => {
-  const headers = ["id", "agent_nom", "montant", "motif", "date", "mois", "annule"];
-  const filename = `avances_${companyName}_${new Date().toISOString().split("T")[0]}`;
-  exportToCSV(avances, headers, filename);
+  exportToCSV(
+    avances,
+    ["id", "agent_nom", "montant", "motif", "date", "mois", "annule"],
+    makeFilename("avances", companyName),
+  );
 };
 
 export const exportRecuperationsToCSV = (
   recuperations: Record<string, unknown>[],
-  companyName: string = "aterinay",
+  companyName = "aterinay",
 ): void => {
-  const headers = ["id", "date", "livreur_nom", "client_donneur", "frais_recuperation"];
-  const filename = `recuperations_${companyName}_${new Date().toISOString().split("T")[0]}`;
-  exportToCSV(recuperations, headers, filename);
+  exportToCSV(
+    recuperations,
+    ["id", "date", "livreur_nom", "client_donneur", "frais_recuperation"],
+    makeFilename("recuperations", companyName),
+  );
 };
 
 export const exportProduitsToCSV = (
   produits: Record<string, unknown>[],
-  companyName: string = "commerce",
+  companyName = "commerce",
 ): void => {
-  const headers = [
-    "id",
-    "nom",
-    "reference",
-    "categorie",
-    "prix_achat",
-    "prix_vente",
-    "quantite_stock",
-    "stock_minimum",
-    "unite",
-  ];
-  const filename = `produits_${companyName}_${new Date().toISOString().split("T")[0]}`;
-  exportToCSV(produits, headers, filename);
+  exportToCSV(
+    produits,
+    [
+      "id", "nom", "reference", "categorie", "prix_achat",
+      "prix_vente", "quantite_stock", "stock_minimum", "unite",
+    ],
+    makeFilename("produits", companyName),
+  );
 };
 
 export const exportVentesToCSV = (
   ventes: Record<string, unknown>[],
-  companyName: string = "commerce",
+  companyName = "commerce",
 ): void => {
-  const headers = [
-    "numero_facture",
-    "client_nom",
-    "client_telephone",
-    "date_vente",
-    "montant_total",
-    "remise",
-    "montant_paye",
-    "reste_a_payer",
-    "statut",
-    "type_paiement",
-  ];
-  const filename = `ventes_${companyName}_${new Date().toISOString().split("T")[0]}`;
-  exportToCSV(ventes, headers, filename);
+  exportToCSV(
+    ventes,
+    [
+      "numero_facture", "client_nom", "client_telephone",
+      "date_vente", "montant_total", "remise", "montant_paye",
+      "reste_a_payer", "statut", "type_paiement",
+    ],
+    makeFilename("ventes", companyName),
+  );
 };
 
 export const exportAchatsToCSV = (
   achats: Record<string, unknown>[],
-  companyName: string = "commerce",
+  companyName = "commerce",
 ): void => {
-  const headers = [
-    "numero_commande",
-    "fournisseur_nom",
-    "fournisseur_contact",
-    "date_achat",
-    "montant_total",
-    "montant_paye",
-    "statut",
-  ];
-  const filename = `achats_${companyName}_${new Date().toISOString().split("T")[0]}`;
-  exportToCSV(achats, headers, filename);
+  exportToCSV(
+    achats,
+    [
+      "numero_commande", "fournisseur_nom", "fournisseur_contact",
+      "date_achat", "montant_total", "montant_paye", "statut",
+    ],
+    makeFilename("achats", companyName),
+  );
 };
 
 export const exportDepensesToCSV = (
   depenses: Record<string, unknown>[],
-  companyName: string = "pomanay",
+  companyName = "pomanay",
 ): void => {
-  const headers = ["date", "categorie", "description", "montant"];
-  const filename = `depenses_${companyName}_${new Date().toISOString().split("T")[0]}`;
-  exportToCSV(depenses, headers, filename);
+  exportToCSV(
+    depenses,
+    ["date", "categorie", "description", "montant"],
+    makeFilename("depenses", companyName),
+  );
 };
 
 export const exportStockToCSV = (
   produits: Record<string, unknown>[],
-  companyName: string = "commerce",
+  companyName = "commerce",
 ): void => {
-  const headers = [
-    "nom",
-    "reference",
-    "categorie",
-    "prix_achat",
-    "prix_vente",
-    "quantite_stock",
-    "stock_minimum",
-    "valeur_stock",
-    "unite",
-  ];
-  const data = produits.map((p: Record<string, unknown>) => ({
+  const data = produits.map((p) => ({
     ...p,
     valeur_stock: (Number(p.quantite_stock) || 0) * (Number(p.prix_achat) || 0),
   }));
-  const filename = `stock_${companyName}_${new Date().toISOString().split("T")[0]}`;
-  exportToCSV(data, headers, filename);
+  exportToCSV(
+    data,
+    [
+      "nom", "reference", "categorie", "prix_achat", "prix_vente",
+      "quantite_stock", "stock_minimum", "valeur_stock", "unite",
+    ],
+    makeFilename("stock", companyName),
+  );
 };

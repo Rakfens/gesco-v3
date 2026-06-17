@@ -1,59 +1,24 @@
-// src/modules/livraison/components/LivraisonForm.jsx — Design system professionnel
-import { useState } from "react";
+// src/modules/livraison/components/LivraisonForm.tsx
+"use client";
+
+import { useState, useCallback, useMemo } from "react";
 import { Button, Card, Input, Select } from "@/modules/shared/components/ui";
 import { useCompany } from "@/modules/shared/context/CompanyContext";
 import { useIsMobile } from "@/modules/shared/hooks/useIsMobile";
+import type { Livraison } from "@/modules/shared/types";
 import type { ToastType } from "@/modules/shared/hooks/useToast";
 import { PAIE_MODES, STATUTS, TODAY } from "@/modules/shared/utils/constants";
 
-interface StatusButtonProps {
-  mode: { key: string; label: string; icon: string };
-  active: boolean;
-  onClick: () => void;
+/* ─── Types ─── */
+interface PaiementMode {
+  key: string;
+  label: string;
+  icon: string;
 }
-const StatusButton = ({ mode, active, onClick }: StatusButtonProps) => (
-  <button
-    onClick={onClick}
-    data-testid={`paiement-mode-${mode.key}`}
-    style={{
-      padding: "10px 8px",
-      border: `2px solid ${active ? "var(--accent)" : "var(--border2)"}`,
-      borderRadius: 9,
-      background: active ? "var(--accent-dim)" : "var(--bg)",
-      color: active ? "var(--accent)" : "var(--subtle)",
-      cursor: "pointer",
-      fontSize: 12,
-      fontWeight: 600,
-      textAlign: "center",
-      transition: "all 0.15s ease",
-      flex: 1,
-    }}
-  >
-    <div
-      style={{
-        width: 24,
-        height: 24,
-        borderRadius: 6,
-        background: active ? "var(--accent)" : "var(--border2)",
-        color: active ? "#fff" : "var(--subtle)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: "0.05em",
-        flexShrink: 0,
-      }}
-    >
-      {mode.icon}
-    </div>
-    <div style={{ marginTop: 2 }}>{mode.label}</div>
-  </button>
-);
 
 interface LivraisonFormProps {
   agents: Array<{ id: string; nom: string }>;
-  onAddLivraison: (data: Record<string, unknown>) => Promise<void>;
+  onAddLivraison: (data: Partial<Livraison>) => Promise<void>;
   showToast: (msg: string, type?: ToastType, duration?: number) => number;
   suggestions?: { colisList?: string[]; clients?: string[]; lieux?: string[] };
 }
@@ -74,12 +39,48 @@ interface FormState {
   remarque: string;
 }
 
-export const LivraisonForm = ({
+/* ─── Sous-composants ─── */
+function PaiementButton({
+  mode,
+  active,
+  onClick,
+}: {
+  mode: PaiementMode;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+    type="button"
+    onClick={onClick}
+    data-testid={`paiement-mode-${mode.key}`}
+    className={`flex-1 py-2.5 px-2 rounded-[9px] text-xs font-semibold text-center cursor-pointer transition-all duration-150 font-[var(--font)] ${active ? "border-2 border-[var(--accent)] bg-[var(--accent-dim)] text-[var(--accent)]" : "border-2 border-[var(--border2)] bg-[var(--bg)] text-[var(--subtle)]"}`}
+    >
+    <div
+    className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold tracking-wider flex-shrink-0 mx-auto mb-0.5 ${active ? "bg-[var(--accent)] text-white" : "bg-[var(--border2)] text-[var(--subtle)]"}`}
+    >
+    {mode.icon}
+    </div>
+    {mode.label}
+    </button>
+  );
+}
+
+function SectionHeader({ label, colorClass }: { label: string; colorClass: string }) {
+  return (
+    <div className={`text-[11px] font-bold uppercase tracking-wider mb-2.5 ${colorClass}`}>
+    {label}
+    </div>
+  );
+}
+
+/* ─── Form ─── */
+export function LivraisonForm({
   agents,
   onAddLivraison,
   showToast,
   suggestions,
-}: LivraisonFormProps) => {
+}: LivraisonFormProps) {
   const { currentCompany } = useCompany();
   const isMobile = useIsMobile();
 
@@ -95,36 +96,34 @@ export const LivraisonForm = ({
     frais: "",
     paiement: "espece",
     date: TODAY(),
-    statut: "en_cours",
-    remarque: "",
+                                               statut: "en_cours",
+                                               remarque: "",
   });
 
-  const handleSubmit = async () => {
-    if (!form.colis || !form.client_donneur || !form.destinataire || !form.agentId || !form.date) {
-      showToast("Colis, client donneur, destinataire, livreur et date requis", "error");
-      return;
-    }
+  const [submitting, setSubmitting] = useState(false);
 
-    const selectedAgent = agents.find((a) => a.id === form.agentId);
-    const agent_nom = selectedAgent?.nom || "—";
+  /* ─── Mémoïsation ─── */
+  const agentOptions = useMemo(
+    () => agents.map((a) => ({ value: String(a.id), label: a.nom })),
+                               [agents]
+  );
 
-    const livraisonData = {
-      colis: form.colis,
-      client_donneur: form.client_donneur,
-      destinataire: form.destinataire,
-      destinataire_telephone: form.destinataire_telephone,
-      destinataire_lieu: form.destinataire_lieu,
-      agent_id: parseInt(form.agentId, 10),
-      agent_nom: agent_nom,
-      montant: form.paiement === "client" ? 0 : parseFloat(form.montant) || 0,
-      frais: parseFloat(form.frais) || 0,
-      paiement: form.paiement,
-      date: form.date,
-      statut: form.statut,
-      company_id: currentCompany?.id,
-    };
+  const paiementModes = useMemo(
+    () => Object.entries(PAIE_MODES).map(([key, val]) => ({ key, label: val.label, icon: val.icon })),
+                                []
+  );
 
-    await onAddLivraison(livraisonData);
+  const statutOptions = useMemo(
+    () => Object.entries(STATUTS).map(([key, val]) => ({ value: key, label: val.label })),
+                                []
+  );
+
+  /* ─── Handlers ─── */
+  const updateField = useCallback(<K extends keyof FormState>(field: K, value: FormState[K]) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
+  const resetForm = useCallback(() => {
     setForm({
       colis: "",
       client_donneur: "",
@@ -137,269 +136,252 @@ export const LivraisonForm = ({
       frais: "",
       paiement: "espece",
       date: TODAY(),
-      statut: "en_cours",
-      remarque: "",
+            statut: "en_cours",
+            remarque: "",
     });
-    showToast("Livraison enregistrée");
-  };
+  }, []);
 
-  const grid2 = { display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 };
+  const handleSubmit = useCallback(async () => {
+    // Validation
+    const required = [
+      { field: "colis" as const, label: "Nom du colis" },
+      { field: "client_donneur" as const, label: "Client donneur" },
+      { field: "destinataire" as const, label: "Destinataire" },
+      { field: "agentId" as const, label: "Livreur" },
+      { field: "date" as const, label: "Date" },
+    ];
+    const missing = required.filter((r) => !form[r.field].trim());
+    if (missing.length > 0) {
+      const labels = missing.map((m) => m.label).join(", ");
+      showToast(`${labels} requis${missing.length > 1 ? "s" : ""}`, "error");
+      return;
+    }
 
-  const _paiementOptions = Object.entries(PAIE_MODES).map(([key, val]) => ({
-    value: key,
-    label: val.label,
-    icon: val.icon,
-  }));
+    const selectedAgent = agents.find((a) => a.id === form.agentId);
+    const agent_nom = selectedAgent?.nom || "—";
 
-  const paiementObj = Object.entries(PAIE_MODES).map(([key, val]) => ({
-    key,
-    label: val.label,
-    icon: val.icon,
-  }));
+    // Construire l'objet Partial<Livraison> typé
+    const livraisonData: Partial<Livraison> = {
+      colis: form.colis.trim(),
+                                   client_donneur: form.client_donneur.trim(),
+                                   destinataire: form.destinataire.trim(),
+                                   destinataire_telephone: form.destinataire_telephone.trim() || undefined,
+                                   destinataire_lieu: form.destinataire_lieu.trim() || undefined,
+                                   agent_id: form.agentId,
+                                   agent_nom: agent_nom,
+                                   montant: form.paiement === "client" ? 0 : parseFloat(form.montant) || 0,
+                                   frais: parseFloat(form.frais) || 0,
+                                   paiement: form.paiement,
+                                   date: form.date,
+                                   statut: form.statut,
+                                   remarque: form.statut === "reporte" ? form.remarque.trim() : undefined,
+                                   company_id: currentCompany?.id,
+    };
 
-  const statutOptions = Object.entries(STATUTS).map(([key, val]) => ({
-    value: key,
-    label: val.label,
-  }));
+    setSubmitting(true);
+    try {
+      await onAddLivraison(livraisonData);
+      resetForm();
+      showToast("Livraison enregistrée avec succès");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur lors de l'enregistrement";
+      showToast(msg, "error");
+    } finally {
+      setSubmitting(false);
+    }
+  }, [form, agents, currentCompany, onAddLivraison, showToast, resetForm]);
 
-  const agentOptions = agents.map((a) => ({ value: String(a.id), label: a.nom }));
+  const isClientPaiement = form.paiement === "client";
 
   return (
-    <div>
-      <div style={{ marginBottom: 20 }} data-testid="livraison-form-page">
-        <h1
-          style={{ fontSize: 22, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.02em" }}
-        >
-          Nouvelle livraison
-          {currentCompany && (
-            <span style={{ color: "var(--muted)", fontWeight: 400, fontSize: 14 }}>
-              {" "}
-              · {currentCompany.name}
-            </span>
-          )}
-        </h1>
+    <div data-testid="livraison-form-page">
+    {/* Header */}
+    <div className="mb-5">
+    <h1 className="font-extrabold tracking-tight text-[22px] text-[var(--text)]">
+    Nouvelle livraison
+    {currentCompany && (
+      <span className="font-normal ml-1.5 text-sm text-[var(--muted)]">
+      · {currentCompany.name}
+      </span>
+    )}
+    </h1>
+    </div>
+
+    <Card padding={isMobile ? "sm" : "md"}>
+    {/* Colis + Montant */}
+    <div className={`grid gap-3 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}>
+    <div className="relative">
+    <Input
+    label="Nom du colis"
+    placeholder="Ex: Téléphone"
+    value={form.colis}
+    onChange={(e) => updateField("colis", e.target.value)}
+    list="colis-list"
+    required
+    />
+    <datalist id="colis-list">
+    {suggestions?.colisList?.map((c) => (
+      <option key={c} value={c} />
+    ))}
+    </datalist>
+    </div>
+    <Input
+    label="Montant (Ar)"
+    type="number"
+    placeholder="50000"
+    value={form.montant}
+    onChange={(e) => updateField("montant", e.target.value)}
+    disabled={isClientPaiement}
+    min={0}
+    step={100}
+    />
+    </div>
+
+    {/* Client donneur */}
+    <div className="rounded-[10px] p-3 mb-3 bg-blue-400/10">
+    <SectionHeader label="Client donneur" colorClass="text-blue-400" />
+    <div className="relative">
+    <Input
+    placeholder="Ex: SARL TECH"
+    value={form.client_donneur}
+    onChange={(e) => updateField("client_donneur", e.target.value)}
+    list="client-list"
+    required
+    />
+    <datalist id="client-list">
+    {suggestions?.clients?.map((c) => (
+      <option key={c} value={c} />
+    ))}
+    </datalist>
+    </div>
+    </div>
+
+    {/* Destinataire */}
+    <div className="rounded-[10px] p-3 mb-3 bg-teal-400/10">
+    <SectionHeader label="Destinataire" colorClass="text-teal-400" />
+    <div className={`grid gap-3 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}>
+    <div className="relative">
+    <Input
+    placeholder="Ex: Jean RAZAFY"
+    value={form.destinataire}
+    onChange={(e) => updateField("destinataire", e.target.value)}
+    list="destinataire-list"
+    required
+    />
+    <datalist id="destinataire-list" />
+    </div>
+    <Input
+    type="tel"
+    placeholder="034 00 000 00"
+    value={form.destinataire_telephone}
+    onChange={(e) => updateField("destinataire_telephone", e.target.value)}
+    />
+    </div>
+    <div className="mt-2 relative">
+    <Input
+    placeholder="Ex: Analakely, Antaninarenina..."
+    value={form.destinataire_lieu}
+    onChange={(e) => updateField("destinataire_lieu", e.target.value)}
+    list="lieu-list"
+    />
+    <datalist id="lieu-list">
+    {suggestions?.lieux?.map((c) => (
+      <option key={c} value={c} />
+    ))}
+    </datalist>
+    </div>
+    </div>
+
+    {/* Livreur + Date */}
+    <div className={`grid gap-3 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}>
+    <Select
+    label="Livreur"
+    value={form.agentId}
+    onChange={(e) => {
+      const agentId = e.target.value;
+      const agent = agents.find((a) => a.id === agentId);
+      setForm((prev) => ({ ...prev, agentId, agent_nom: agent?.nom || "" }));
+    }}
+    options={agentOptions}
+    placeholder="-- Choisir --"
+    required
+    />
+    <Input
+    label="Date"
+    type="date"
+    value={form.date}
+    onChange={(e) => updateField("date", e.target.value)}
+    required
+    />
+    </div>
+
+    {/* Mode de paiement */}
+    <div className="mb-3">
+    <label className="block text-xs font-semibold mb-2 text-[var(--text2)]">
+    Mode de paiement
+    </label>
+    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${paiementModes.length}, 1fr)` }}>
+    {paiementModes.map((mode) => (
+      <PaiementButton
+      key={mode.key}
+      mode={mode}
+      active={form.paiement === mode.key}
+      onClick={() => updateField("paiement", mode.key)}
+      />
+    ))}
+    </div>
+    </div>
+
+    {/* Frais */}
+    <Input
+    label="Frais de livraison (Ar)"
+    type="number"
+    placeholder="3000"
+    value={form.frais}
+    onChange={(e) => updateField("frais", e.target.value)}
+    min={0}
+    step={100}
+    />
+
+    {/* Statut */}
+    <div className="mt-3">
+    <Select
+    label="Statut"
+    value={form.statut}
+    onChange={(e) => updateField("statut", e.target.value)}
+    options={statutOptions}
+    />
+    </div>
+
+    {/* Remarque — visible si reporté */}
+    {form.statut === "reporte" && (
+      <div className="mt-3">
+      <label className="block text-xs font-semibold mb-1.5 text-[var(--text2)]">
+      Motif du report
+      </label>
+      <textarea
+      className="w-full px-3.5 py-2.5 min-h-[70px] rounded-lg text-sm outline-none resize-y box-border bg-[var(--card)] border border-[var(--border2)] text-[var(--text)] font-[var(--font)]"
+      value={form.remarque || ""}
+      onChange={(e) => updateField("remarque", e.target.value)}
+      placeholder="Ex: Reporté au lendemain..."
+      rows={3}
+      />
       </div>
+    )}
 
-      <Card padding={isMobile ? 14 : 18}>
-        <div style={grid2}>
-          <Input
-            label="Nom du colis"
-            placeholder="Ex: Téléphone"
-            value={form.colis}
-            onChange={(e) => setForm({ ...form, colis: e.target.value })}
-            list="colis-list"
-          />
-          <datalist id="colis-list">
-            {suggestions?.colisList?.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
-
-          <Input
-            label="Montant (Ar)"
-            type="number"
-            placeholder="50000"
-            value={form.montant}
-            onChange={(e) => setForm({ ...form, montant: e.target.value })}
-            disabled={form.paiement === "client"}
-          />
-        </div>
-
-        {/* Client donneur */}
-        <div
-          style={{ background: "var(--blue-dim)", borderRadius: 10, padding: 12, marginBottom: 12 }}
-        >
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: "var(--blue)",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              marginBottom: 10,
-            }}
-          >
-            Client donneur
-          </div>
-          <Input
-            placeholder="Ex: SARL TECH"
-            value={form.client_donneur}
-            onChange={(e) => setForm({ ...form, client_donneur: e.target.value })}
-            list="client-list"
-          />
-          <datalist id="client-list">
-            {suggestions?.clients?.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
-        </div>
-
-        {/* Destinataire */}
-        <div
-          style={{
-            background: "var(--teal-dim, rgba(20,184,166,0.08))",
-            borderRadius: 10,
-            padding: 12,
-            marginBottom: 12,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: "var(--teal)",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              marginBottom: 10,
-            }}
-          >
-            Destinataire
-          </div>
-          <div style={grid2}>
-            <Input
-              placeholder="Ex: Jean RAZAFY"
-              value={form.destinataire}
-              onChange={(e) => setForm({ ...form, destinataire: e.target.value })}
-              list="destinataire-list"
-            />
-            <datalist id="destinataire-list" />
-            <Input
-              type="tel"
-              placeholder="034 00 000 00"
-              value={form.destinataire_telephone}
-              onChange={(e) => setForm({ ...form, destinataire_telephone: e.target.value })}
-            />
-          </div>
-          <div style={{ marginTop: 8 }}>
-            <Input
-              placeholder="Ex: Analakely, Antaninarenina..."
-              value={form.destinataire_lieu}
-              onChange={(e) => setForm({ ...form, destinataire_lieu: e.target.value })}
-              list="lieu-list"
-            />
-            <datalist id="lieu-list">
-              {suggestions?.lieux?.map((c) => (
-                <option key={c} value={c} />
-              ))}
-            </datalist>
-          </div>
-        </div>
-
-        <div style={grid2}>
-          <Select
-            label="Livreur"
-            value={form.agentId}
-            onChange={(e) => {
-              const agentId = e.target.value;
-              const agent = agents.find((a) => a.id === agentId);
-              setForm({ ...form, agentId, agent_nom: agent?.nom || "" });
-            }}
-            options={agentOptions}
-            placeholder="-- Choisir --"
-          />
-          <Input
-            label="Date"
-            type="date"
-            value={form.date}
-            onChange={(e) => setForm({ ...form, date: e.target.value })}
-          />
-        </div>
-
-        {/* Mode de paiement */}
-        <div style={{ marginBottom: 12 }}>
-          <label
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              color: "var(--text2)",
-              display: "block",
-              marginBottom: 8,
-            }}
-          >
-            Mode de paiement
-          </label>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: `repeat(${paiementObj.length}, 1fr)`,
-              gap: 8,
-            }}
-          >
-            {paiementObj.map((mode) => (
-              <StatusButton
-                key={mode.key}
-                mode={mode}
-                active={form.paiement === mode.key}
-                onClick={() => setForm({ ...form, paiement: mode.key })}
-              />
-            ))}
-          </div>
-        </div>
-
-        <Input
-          label="Frais de livraison (Ar)"
-          type="number"
-          placeholder="3000"
-          value={form.frais}
-          onChange={(e) => setForm({ ...form, frais: e.target.value })}
-        />
-
-        <div style={{ marginTop: 12 }}>
-          <Select
-            label="Statut"
-            value={form.statut}
-            onChange={(e) => setForm({ ...form, statut: e.target.value })}
-            options={statutOptions}
-          />
-        </div>
-
-        {/* Remarque motif — visible si reporté */}
-        {form.statut === "reporte" && (
-          <div style={{ marginTop: 12 }}>
-            <label
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: "var(--text2)",
-                display: "block",
-                marginBottom: 6,
-              }}
-            >
-              Motif du report
-            </label>
-            <textarea
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                minHeight: 70,
-                background: "var(--card)",
-                border: "1px solid var(--border2)",
-                borderRadius: 8,
-                color: "var(--text)",
-                fontSize: 14,
-                fontFamily: "var(--font)",
-                outline: "none",
-                resize: "vertical",
-                boxSizing: "border-box",
-              }}
-              value={form.remarque || ""}
-              onChange={(e) => setForm({ ...form, remarque: e.target.value })}
-                placeholder="Ex: Reporté au lendemain..."
-            />
-          </div>
-        )}
-
-        <div style={{ marginTop: 16 }}>
-          <Button
-            variant="primary"
-            fullWidth
-            onClick={handleSubmit}
-            data-testid="btn-submit-livraison"
-          >
-            Enregistrer la livraison
-          </Button>
-        </div>
-      </Card>
+    {/* Submit */}
+    <div className="mt-4">
+    <Button
+    variant="primary"
+    fullWidth
+    onClick={handleSubmit}
+    disabled={submitting}
+    data-testid="btn-submit-livraison"
+    >
+    {submitting ? "Enregistrement..." : "Enregistrer la livraison"}
+    </Button>
+    </div>
+    </Card>
     </div>
   );
-};
+}

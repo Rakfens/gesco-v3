@@ -1,24 +1,61 @@
-import { useState } from "react";
+// src/modules/shared/hooks/useAuthMock.ts
+import { useState, useCallback } from "react";
 
-interface SessionUser {
+/* ─── Types ─── */
+interface User {
+  id: string;
   email: string;
 }
 
 interface Session {
-  user: SessionUser;
+  user: User;
 }
 
-export const useAuth = () => {
-  const [session, setSession] = useState<Session | null>({ user: { email: "admin@aterinay.com" } });
-  const [loading, _setLoading] = useState(false);
+interface UseAuthReturn {
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  authError: string | null;
+  isAuthenticated: boolean;
+}
 
-  const login = async (email: string, _password: string): Promise<void> => {
-    setSession({ user: { email: email || "admin@aterinay.com" } });
-  };
+/* ─── Mock Auth Hook ─── */
+export function useAuth(): UseAuthReturn {
+  const [session, setSession] = useState<Session | null>({
+    user: { id: "mock-user-id", email: "admin@aterinay.com" },
+  });
+  const [loading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  const logout = async (): Promise<void> => {
+  const login = useCallback(async (email: string, _password: string): Promise<void> => {
+    // Simuler un délai réseau
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      setAuthError("Email requis");
+      throw new Error("Email requis");
+    }
+
+    setSession({
+      user: { id: "mock-user-id", email: normalizedEmail || "admin@aterinay.com" },
+    });
+    setAuthError(null);
+  }, []);
+
+  const logout = useCallback(async (): Promise<void> => {
+    await new Promise((resolve) => setTimeout(resolve, 150));
     setSession(null);
-  };
+    setAuthError(null);
+  }, []);
 
-  return { session, loading, login, logout };
-};
+  return {
+    user: session?.user ?? null,
+    loading,
+    login,
+    logout,
+    authError,
+    isAuthenticated: !!session?.user,
+  };
+}

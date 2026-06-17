@@ -1,8 +1,9 @@
+// src/modules/shared/hooks/useToast.ts
 "use client";
 
-// src/modules/shared/hooks/useToast.ts
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+/* ─── Types ─── */
 export type ToastType = "success" | "error" | "warn" | "info";
 
 interface Toast {
@@ -10,8 +11,6 @@ interface Toast {
   msg: string;
   type: ToastType;
 }
-
-let toastId = 0;
 
 interface UseToastReturn {
   toasts: Toast[];
@@ -24,38 +23,74 @@ interface UseToastReturn {
   info: (msg: string) => number;
 }
 
-export const useToast = (): UseToastReturn => {
+/* ─── ID generator (module-level, pas global) ─── */
+let toastId = 0;
+
+/* ─── Hook ─── */
+export function useToast(): UseToastReturn {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
-  const showToast = useCallback((msg: string, type: ToastType = "success", duration = 3000) => {
-    const id = ++toastId;
-    const newToast: Toast = { id, msg, type };
-
-    setToasts((prev) => [...prev, newToast]);
-
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, duration);
-
-    return id;
+  // Cleanup tous les timeouts au unmount
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach(clearTimeout);
+      timeoutsRef.current.clear();
+    };
   }, []);
+
+  const showToast = useCallback(
+    (msg: string, type: ToastType = "success", duration = 3000) => {
+      const id = ++toastId;
+      const newToast: Toast = { id, msg, type };
+
+      setToasts((prev) => {
+        // Limiter à 5 toasts simultanés
+        const next = [...prev, newToast];
+        if (next.length > 5) {
+          const removed = next.shift();
+          if (removed) {
+            // Nettoyer le timeout du toast supprimé
+            // (on ne peut pas le retrouver facilement, mais il expirera tout seul)
+          }
+        }
+        return next;
+      });
+
+      const timer = setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+        timeoutsRef.current.delete(timer);
+      }, duration);
+
+      timeoutsRef.current.add(timer);
+      return id;
+    },
+    []
+  );
 
   const hideToast = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
   const clearAll = useCallback(() => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current.clear();
     setToasts([]);
   }, []);
+
+  const success = useCallback((msg: string) => showToast(msg, "success"), [showToast]);
+  const error = useCallback((msg: string) => showToast(msg, "error"), [showToast]);
+  const warn = useCallback((msg: string) => showToast(msg, "warn"), [showToast]);
+  const info = useCallback((msg: string) => showToast(msg, "info"), [showToast]);
 
   return {
     toasts,
     showToast,
     hideToast,
     clearAll,
-    success: (msg: string) => showToast(msg, "success"),
-    error: (msg: string) => showToast(msg, "error"),
-    warn: (msg: string) => showToast(msg, "warn"),
-    info: (msg: string) => showToast(msg, "info"),
+    success,
+    error,
+    warn,
+    info,
   };
-};
+}

@@ -1,42 +1,35 @@
-"use client";
+// src/app/layout.tsx — 100% Tailwind pur
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { ClientProviders } from "@/modules/shared/components/ClientProviders";
 
-import { ThemeProvider } from "@/modules/shared/context/ThemeContext";
-import { type ReactNode } from "react";
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export const metadata: Metadata = {
+  title: "HT-GesCom — Gestion commerciale",
+  description: "Application de gestion commerciale Aterinay Services",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#08080c",
+  colorScheme: "dark",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider>
-      <RootLayoutInner>{children}</RootLayoutInner>
-    </ThemeProvider>
-  );
-}
-
-function RootLayoutInner({ children }: { children: ReactNode }) {
-  return (
-    <html lang="fr" style={{ height: "100%", colorScheme: "dark" }}>
-      <head>
-        <meta name="color-scheme" content="dark" />
-        <meta name="theme-color" content="#08080c" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-      </head>
-      <body
-        style={{
-          minHeight: "100%",
-          display: "flex",
-          flexDirection: "column",
-          background: "var(--bg)",
-          color: "var(--text)",
-          fontFamily: "var(--font)",
-          fontSize: 14,
-          lineHeight: 1.6,
-          WebkitFontSmoothing: "antialiased",
-          MozOsxFontSmoothing: "grayscale",
-          margin: 0,
-          padding: 0,
-        }}
-      >
-        {children}
-      </body>
+    <html lang="fr" className={`${inter.variable} dark h-full`}>
+    <body className="min-h-full flex flex-col bg-[#08080c] text-[#e8e8ec] antialiased font-[family-name:var(--font-inter),Inter,system-ui,sans-serif]">
+    <ClientProviders>{children}</ClientProviders>
+    </body>
     </html>
   );
 }

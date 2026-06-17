@@ -1,20 +1,50 @@
-import type { NextRequest } from "next/server";
+// src/middleware.ts
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
-// Routes publiques (pas besoin d'auth)
-const PUBLIC_ROUTES = ["/login", "/_next", "/favicon.ico", "/api"];
+const PUBLIC_ROUTES = ["/login", "/register", "/_next", "/favicon.ico", "/api"];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Laisser passer les routes publiques
+  // Routes publiques — pas de vérification
   if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
-  // Laisser passer toutes les routes — la protection auth est gérée côté client
-  // par le CompanyProvider dans le layout (app)
-  return NextResponse.next();
+  // Créer le client Supabase avec gestion des cookies
+  const response = NextResponse.next();
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(
+          cookiesToSet: { name: string; value: string; options: CookieOptions }[]
+        ) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+
+  // Vérifier la session via Supabase (officielle et sécurisée)
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  return response;
 }
 
 export const config = {

@@ -1,117 +1,71 @@
-// ui/Button.tsx — Bouton moderne et élégant
-import type React from "react";
+// ui/Button.tsx — Bouton moderne et élégant (100% Tailwind pur)
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 type ButtonVariant = "primary" | "success" | "danger" | "warning" | "secondary" | "ghost" | "outline";
 type ButtonSize = "sm" | "md" | "lg";
 
-interface ButtonProps {
-  children: React.ReactNode;
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  children: ReactNode;
   variant?: ButtonVariant;
   size?: ButtonSize;
-  disabled?: boolean;
   loading?: boolean;
-  icon?: React.ReactNode;
-  iconRight?: React.ReactNode;
+  icon?: ReactNode;
+  iconRight?: ReactNode;
   fullWidth?: boolean;
-  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  type?: "button" | "submit" | "reset";
-  style?: React.CSSProperties;
-  className?: string;
 }
 
-const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
-  primary: {
-    background: "#c9a96e",
-    color: "#08080c",
-    border: "1px solid transparent",
-    boxShadow: "0 2px 8px rgba(201,169,110,0.25)",
-  },
-  success: {
-    background: "#34d399",
-    color: "#08080c",
-    border: "1px solid transparent",
-    boxShadow: "0 2px 8px rgba(52,211,153,0.25)",
-  },
-  danger: {
-    background: "#f87171",
-    color: "#fff",
-    border: "1px solid transparent",
-    boxShadow: "0 2px 8px rgba(248,113,113,0.25)",
-  },
-  warning: {
-    background: "#fbbf24",
-    color: "#08080c",
-    border: "1px solid transparent",
-    boxShadow: "0 2px 8px rgba(251,191,36,0.25)",
-  },
-  secondary: {
-    background: "var(--bg-tertiary)",
-    color: "var(--text)",
-    border: "1px solid var(--border)",
-  },
-  ghost: {
-    background: "transparent",
-    color: "var(--text-secondary)",
-    border: "1px solid transparent",
-  },
-  outline: {
-    background: "transparent",
-    color: "#c9a96e",
-    border: "1.5px solid var(--border)",
-  },
+const variantMap: Record<ButtonVariant, string> = {
+  primary:
+  "bg-amber-400 text-gray-950 border-transparent shadow-[0_2px_8px_rgba(251,191,36,0.25)] hover:bg-amber-300 hover:shadow-[0_4px_16px_rgba(251,191,36,0.35)] active:bg-amber-500",
+  success:
+  "bg-emerald-400 text-gray-950 border-transparent shadow-[0_2px_8px_rgba(52,211,153,0.25)] hover:bg-emerald-500 hover:shadow-[0_4px_16px_rgba(52,211,153,0.35)] active:bg-emerald-600",
+  danger:
+  "bg-red-400 text-white border-transparent shadow-[0_2px_8px_rgba(248,113,113,0.25)] hover:bg-red-500 hover:shadow-[0_4px_16px_rgba(248,113,113,0.35)] active:bg-red-600",
+  warning:
+  "bg-yellow-400 text-gray-950 border-transparent shadow-[0_2px_8px_rgba(251,191,36,0.25)] hover:bg-yellow-500 hover:shadow-[0_4px_16px_rgba(251,191,36,0.35)] active:bg-yellow-600",
+  secondary:
+  "bg-gray-900 text-gray-200 border-white/[0.03] hover:bg-gray-800 hover:border-white/5 active:bg-gray-950",
+  ghost:
+  "bg-transparent text-gray-400 border-transparent hover:bg-gray-900 hover:text-gray-200 active:bg-gray-950",
+  outline:
+  "bg-transparent text-amber-400 border-[1.5px] border-white/[0.03] hover:border-amber-400 hover:bg-amber-400/5 active:bg-amber-400/10",
 };
 
-const sizeStyles: Record<ButtonSize, { padding: string; fontSize: number; borderRadius: number; height?: number }> = {
-  sm: { padding: "6px 12px", fontSize: 12, borderRadius: 8, height: 32 },
-  md: { padding: "8px 16px", fontSize: 13, borderRadius: 10, height: 38 },
-  lg: { padding: "10px 20px", fontSize: 14, borderRadius: 12, height: 44 },
+const sizeMap: Record<ButtonSize, string> = {
+  sm: "h-8 px-3 py-1.5 text-xs rounded-lg gap-1.5",
+  md: "h-[38px] px-4 py-2 text-[13px] rounded-[10px] gap-1.5",
+  lg: "h-11 px-5 py-2.5 text-sm rounded-xl gap-2",
 };
 
-export const Button: React.FC<ButtonProps> = ({
-  children, variant = "primary", size = "md", disabled = false, loading = false,
-  icon = null, iconRight = null, fullWidth = false, onClick, type = "button", style = {}, className,
-}) => {
-  const v = variantStyles[variant];
-  const s = sizeStyles[size];
-
+export function Button({
+  children,
+  variant = "primary",
+  size = "md",
+  disabled = false,
+  loading = false,
+  icon = null,
+  iconRight = null,
+  fullWidth = false,
+  className = "",
+  type = "button",
+  ...props
+}: ButtonProps) {
   return (
-    <button type={type} onClick={onClick} disabled={disabled || loading} className={className}
-      style={{
-        ...v, ...s, fontWeight: 600, fontFamily: "var(--font)",
-        cursor: disabled || loading ? "not-allowed" : "pointer",
-        opacity: disabled || loading ? 0.5 : 1,
-        display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
-        transition: "all var(--transition-fast)",
-        width: fullWidth ? "100%" : "auto", whiteSpace: "nowrap", ...style,
-      }}
-      onMouseEnter={(e) => {
-        if (!disabled && !loading) {
-          if (variant === "primary") (e.currentTarget as HTMLElement).style.background = "#d4b77a";
-          if (variant === "success") (e.currentTarget as HTMLElement).style.background = "#10b981";
-          if (variant === "danger") (e.currentTarget as HTMLElement).style.background = "#ef4444";
-          if (variant === "warning") (e.currentTarget as HTMLElement).style.background = "#f59e0b";
-          if (variant === "ghost") (e.currentTarget as HTMLElement).style.background = "var(--bg-tertiary)";
-          if (variant === "secondary") (e.currentTarget as HTMLElement).style.background = "var(--border)";
-          if (variant === "outline") (e.currentTarget as HTMLElement).style.borderColor = "#c9a96e";
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!disabled && !loading) {
-          (e.currentTarget as HTMLElement).style.background = v.background as string;
-          if (variant === "outline") (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
-        }
-      }}
+    <button
+    type={type}
+    disabled={disabled || loading}
+    className={`inline-flex items-center justify-center whitespace-nowrap font-semibold transition-all duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50 ${variantMap[variant]} ${sizeMap[size]} ${fullWidth ? "w-full" : "w-auto"} ${className}`}
+    {...props}
     >
-      {loading ? (
-        <span style={{
-          width: 14, height: 14, border: "2px solid rgba(255,255,255,0.3)",
-          borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.6s linear infinite", display: "inline-block",
-        }} />
-      ) : icon}
-      {children}
-      {iconRight}
+    {loading ? (
+      <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+    ) : (
+      icon
+    )}
+    {children}
+    {iconRight}
     </button>
   );
-};
+}
 
 export default Button;

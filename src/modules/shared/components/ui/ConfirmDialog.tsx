@@ -24,18 +24,20 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Modal open={open} onClose={onCancel}>
-      <ModalHeader title={title} onClose={onCancel} />
-      <ModalBody>
-        <p style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.5 }}>{message}</p>
-      </ModalBody>
-      <ModalFooter>
-        <Button variant="secondary" onClick={onCancel}>
-          {cancelLabel}
-        </Button>
-        <Button variant={variant} onClick={onConfirm}>
-          {confirmLabel}
-        </Button>
-      </ModalFooter>
+    <ModalHeader title={title} onClose={onCancel} />
+    <ModalBody>
+    <p className="text-sm leading-relaxed text-gray-400">{message}</p>
+    </ModalBody>
+    <ModalFooter>
+    <Button variant="secondary" onClick={onCancel}>
+    {cancelLabel}
+    </Button>
+    <Button variant={variant} onClick={onConfirm}>
+    {confirmLabel}
+    </Button>
+    </ModalFooter>
     </Modal>
   );
 }
+
+export default ConfirmDialog;

@@ -14,47 +14,41 @@ import { getTotalAchats } from "../services/achatService";
 import { fetchProduits, getAlertesStockBas } from "../services/produitService";
 import { fetchVentes, getCA, getTopProduits } from "../services/venteService";
 
-/* ─── Colors ─── */
-const C = {
-  gold: "#c9a96e", goldDim: "rgba(201,169,110,0.1)", success: "#34d399", warning: "#fbbf24", danger: "#f87171",
-  violet: "#8b5cf6", blue: "#60a5fa", orange: "#fb923c", pink: "#f472b6", teal: "#2dd4bf",
-};
-
-const Icon = ({ d, size = 16, color = "currentColor" }: { d: string; size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d={d} />
+const Icon = ({ d, size = 16, className = "" }: { d: string; size?: number; className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+  <path d={d} />
   </svg>
 );
 
 /* ─── Inline StatCard ─── */
-const StatCard2 = ({ label, value, color: c, sub }: { label: string; value: string | number; color: string; sub?: string }) => (
-  <div style={{ background: "var(--card)", borderRadius: 12, border: "1px solid var(--border)", padding: "14px 16px", borderLeft: `3px solid ${c}` }}>
-    <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>{label}</div>
-    <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", lineHeight: 1.2 }}>{value}</div>
-    {sub && <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>{sub}</div>}
+const StatCard2 = ({ label, value, colorClass, sub }: { label: string; value: string | number; colorClass: string; sub?: string }) => (
+  <div className={`bg-[#111114] rounded-xl border border-[#1e1e24] py-3.5 px-4 border-l-[3px] ${colorClass}`}>
+  <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">{label}</div>
+  <div className="text-xl font-extrabold text-white leading-tight">{value}</div>
+  {sub && <div className="text-[10px] text-zinc-500 mt-0.5">{sub}</div>}
   </div>
 );
 
 /* ─── BarChart ─── */
-const BarChart = ({ data, color = C.blue }: { data: Array<{ date: string; total: number }>; color?: string }) => {
+const BarChart = ({ data, colorClass = "bg-blue-400" }: { data: Array<{ date: string; total: number }>; colorClass?: string }) => {
   if (!data.length) return null;
   const maxVal = Math.max(...data.map((d) => d.total), 1);
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 120, overflowX: "auto", padding: "0 4px 4px" }}>
-      {data.map((item) => {
-        const h = Math.max((item.total / maxVal) * 100, 2);
-        return (
-          <div key={item.date} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 36, flex: "0 0 auto" }}>
-            <div style={{ fontSize: 9, color: "var(--text-muted)", marginBottom: 3, fontWeight: 600 }}>{formatAr(item.total).replace(" Ar", "")}</div>
-            <div style={{ width: "100%", background: "var(--bg-secondary)", borderRadius: "4px 4px 0 0", height: 80, display: "flex", alignItems: "flex-end" }}>
-              <div style={{ width: "100%", height: `${h}%`, background: color, borderRadius: "4px 4px 0 0", transition: "height 0.4s ease", minHeight: 2 }} />
-            </div>
-            <div style={{ fontSize: 8, color: "var(--text-muted)", marginTop: 3, textAlign: "center" }}>
-              {(() => { const d = new Date(`${item.date}T00:00:00`); return Number.isNaN(d.getTime()) ? item.date : d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }); })()}
-            </div>
-          </div>
-        );
-      })}
+    <div className="flex items-end gap-1 h-[120px] overflow-x-auto px-1 pb-1">
+    {data.map((item) => {
+      const h = Math.max((item.total / maxVal) * 100, 2);
+      return (
+        <div key={item.date} className="flex flex-col items-center min-w-[36px] shrink-0">
+        <div className="text-[9px] text-zinc-500 mb-0.5 font-semibold">{formatAr(item.total).replace(" Ar", "")}</div>
+        <div className="w-full bg-[#0a0a0f] rounded-t h-20 flex items-end">
+        <div className={`w-full ${colorClass} rounded-t transition-all duration-500`} style={{ height: `${h}%`, minHeight: 2 }} />
+        </div>
+        <div className="text-[8px] text-zinc-500 mt-0.5 text-center">
+        {(() => { const d = new Date(`${item.date}T00:00:00`); return Number.isNaN(d.getTime()) ? item.date : d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }); })()}
+        </div>
+        </div>
+      );
+    })}
     </div>
   );
 };
@@ -85,7 +79,7 @@ export default function Rapports() {
     try {
       const [ca, ventes, achatsTotal, produits, alertes, top] = await Promise.all([
         getCA(dateDebut, dateFin), fetchVentes({ dateDebut, dateFin }), getTotalAchats(dateDebut, dateFin),
-        fetchProduits(), getAlertesStockBas(), getTopProduits(10, dateDebut, dateFin),
+                                                                                  fetchProduits(), getAlertesStockBas(), getTopProduits(10, dateDebut, dateFin),
       ]);
       setTopProduits(top || []);
       const byDay = new Map();
@@ -114,130 +108,130 @@ export default function Rapports() {
   };
 
   if (loading) return <SkeletonGrid cols={4} rows={2} />;
-  if (error) return <div style={{ padding: 20, textAlign: "center", color: C.danger }}>{error}</div>;
+
+  if (error) return <div className="p-5 text-center text-red-400">{error}</div>;
 
   return (
-    <div className="fadeUp" style={{ animation: "fadeUp 0.4s ease both", paddingBottom: 24 }}>
+    <div className="pb-6 transition-all duration-500 ease-out">
+    {/* ══ HEADER ══ */}
+    <div className="flex items-center justify-between mb-5 flex-wrap gap-2.5">
+    <div className="flex items-center gap-2.5">
+    <div className="w-9 h-9 rounded-[10px] bg-amber-400/10 flex items-center justify-center">
+    <Icon d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" size={18} className="text-amber-400" />
+    </div>
+    <div>
+    <h1 className="text-[22px] font-extrabold text-white m-0">Rapports</h1>
+    <p className="text-xs text-zinc-500 mt-0.5">{currentCompany?.name} · Analyse des performances</p>
+    </div>
+    </div>
+    </div>
 
-      {/* ══ HEADER ══ */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: C.goldDim, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Icon d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" size={18} color={C.gold} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--text)", margin: 0 }}>Rapports</h1>
-            <p style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 1 }}>{currentCompany?.name} · Analyse des performances</p>
-          </div>
-        </div>
+    {/* ══ PÉRIODE ══ */}
+    <Card className="mb-4">
+    <div className="flex gap-2 flex-wrap items-center">
+    <div className="flex gap-1 bg-[#0a0a0f] rounded-[10px] p-1 border border-[#1e1e24] flex-wrap">
+    {PERIOD_OPTIONS.map((opt) => (
+      <button key={opt.value} onClick={() => handlePeriodChange(opt.value)}
+      className={`py-1.5 px-3.5 border-none rounded-md cursor-pointer text-[11px] font-semibold transition-colors ${period === opt.value ? "bg-amber-400 text-gray-950" : "bg-transparent text-zinc-500 hover:text-zinc-300"}`}>
+      {opt.label}
+      </button>
+    ))}
+    </div>
+    <div className="flex gap-1.5 items-center flex-wrap">
+    <input type="date" value={dateDebut} onChange={(e) => setDateDebut(e.target.value)}
+    className="py-1.5 px-2.5 rounded-lg border border-[#1e1e24] bg-[#111114] text-white text-xs font-sans outline-none focus:border-amber-400" />
+    <span className="text-zinc-500 text-xs">→</span>
+    <input type="date" value={dateFin} onChange={(e) => setDateFin(e.target.value)}
+    className="py-1.5 px-2.5 rounded-lg border border-[#1e1e24] bg-[#111114] text-white text-xs font-sans outline-none focus:border-amber-400" />
+    <button onClick={loadReports} className="py-1.5 px-3 rounded-lg border-none bg-amber-400 text-gray-950 cursor-pointer text-xs font-semibold hover:bg-amber-300 transition-colors">
+    Actualiser
+    </button>
+    </div>
+    </div>
+    </Card>
+
+    {/* ══ STATS ══ */}
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-2.5 mb-4">
+    <StatCard2 label="Chiffre d'affaires" value={formatAr(stats.ca)} colorClass="border-emerald-400" />
+    <StatCard2 label="Nb ventes" value={stats.totalVentes} colorClass="border-blue-400" />
+    <StatCard2 label="Total achats" value={formatAr(stats.totalAchats)} colorClass="border-orange-400" />
+    <StatCard2 label="Marge brute" value={formatAr(stats.marge)} colorClass={stats.marge >= 0 ? "border-violet-400" : "border-red-400"} sub={`Taux : ${stats.txMarge}%`} />
+    <StatCard2 label="Produits" value={stats.nbProduits} colorClass="border-teal-400" />
+    <StatCard2 label="Alertes stock" value={stats.alertesStock} colorClass={stats.alertesStock > 0 ? "border-red-400" : "border-emerald-400"} sub={stats.alertesStock > 0 ? "Stock bas ou rupture" : "Tout est OK"} />
+    {currentCompany?.slug === "pomanay" && <StatCard2 label="Dépenses" value={formatAr(stats.totalDepenses)} colorClass="border-pink-400" />}
+    </div>
+
+    {/* ══ ÉVOLUTION VENTES ══ */}
+    {ventesParJour.length > 0 && (
+      <Card className="mb-4">
+      <CardHeader>
+      <div className="flex items-center gap-2">
+      <Icon d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" size={16} className="text-blue-400" />
+      <CardTitle>Évolution des ventes</CardTitle>
       </div>
-
-      {/* ══ PÉRIODE ══ */}
-      <Card style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <div style={{ display: "flex", gap: 4, background: "var(--bg-secondary)", borderRadius: 10, padding: 4, border: "1px solid var(--border)", flexWrap: "wrap" }}>
-            {PERIOD_OPTIONS.map((opt) => (
-              <button key={opt.value} onClick={() => handlePeriodChange(opt.value)}
-                style={{ padding: "6px 14px", border: "none", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "var(--font)", background: period === opt.value ? C.gold : "transparent", color: period === opt.value ? "#08080c" : "var(--text-muted)" }}>
-                {opt.label}
-              </button>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-            <input type="date" value={dateDebut} onChange={(e) => setDateDebut(e.target.value)}
-              style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--card)", color: "var(--text)", fontSize: 12, fontFamily: "var(--font)" }} />
-            <span style={{ color: "var(--text-muted)", fontSize: 12 }}>→</span>
-            <input type="date" value={dateFin} onChange={(e) => setDateFin(e.target.value)}
-              style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--card)", color: "var(--text)", fontSize: 12, fontFamily: "var(--font)" }} />
-            <button onClick={loadReports} style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: C.gold, color: "#08080c", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "var(--font)" }}>
-              Actualiser
-            </button>
-          </div>
-        </div>
+      <span className="text-[11px] text-zinc-500">{ventesParJour.length} jour(s)</span>
+      </CardHeader>
+      <BarChart data={ventesParJour} colorClass="bg-blue-400" />
       </Card>
+    )}
 
-      {/* ══ STATS ══ */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 16 }}>
-        <StatCard2 label="Chiffre d'affaires" value={formatAr(stats.ca)} color={C.success} />
-        <StatCard2 label="Nb ventes" value={stats.totalVentes} color={C.blue} />
-        <StatCard2 label="Total achats" value={formatAr(stats.totalAchats)} color={C.orange} />
-        <StatCard2 label="Marge brute" value={formatAr(stats.marge)} color={stats.marge >= 0 ? C.violet : C.danger} sub={`Taux : ${stats.txMarge}%`} />
-        <StatCard2 label="Produits" value={stats.nbProduits} color={C.teal} />
-        <StatCard2 label="Alertes stock" value={stats.alertesStock} color={stats.alertesStock > 0 ? C.danger : C.success} sub={stats.alertesStock > 0 ? "Stock bas ou rupture" : "Tout est OK"} />
-        {currentCompany?.slug === "pomanay" && <StatCard2 label="Dépenses" value={formatAr(stats.totalDepenses)} color={C.pink} />}
+    {/* ══ TOP PRODUITS ══ */}
+    {topProduits.length > 0 && (
+      <Card className="mb-4">
+      <CardHeader>
+      <div className="flex items-center gap-2">
+      <span className="text-base">🏆</span>
+      <CardTitle>Top {topProduits.length} produits</CardTitle>
       </div>
+      </CardHeader>
+      <Table>
+      <TableHead>
+      <TableRow>
+      <TableHeader>#</TableHeader>
+      <TableHeader>Produit</TableHeader>
+      <TableHeader align="right">Qté</TableHeader>
+      <TableHeader align="right">CA</TableHeader>
+      </TableRow>
+      </TableHead>
+      <TableBody>
+      {topProduits.map((p, idx) => (
+        <TableRow key={idx}>
+        <TableCell className={`font-bold text-[13px] ${idx < 3 ? "text-orange-400" : "text-zinc-500"}`}>{idx + 1}</TableCell>
+        <TableCell className="font-semibold text-xs">{p.produit_nom || p.produit?.nom || "—"}</TableCell>
+        <TableCell align="right" className="text-xs">{p.quantite}</TableCell>
+        <TableCell align="right" className="font-bold text-emerald-400 text-xs">{formatAr(p.chiffre)}</TableCell>
+        </TableRow>
+      ))}
+      </TableBody>
+      </Table>
+      </Card>
+    )}
 
-      {/* ══ ÉVOLUTION VENTES ══ */}
-      {ventesParJour.length > 0 && (
-        <Card style={{ marginBottom: 16 }}>
-          <CardHeader>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Icon d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" size={16} color={C.blue} />
-              <CardTitle>Évolution des ventes</CardTitle>
-            </div>
-            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{ventesParJour.length} jour(s)</span>
-          </CardHeader>
-          <BarChart data={ventesParJour} color={C.blue} />
-        </Card>
-      )}
-
-      {/* ══ TOP PRODUITS ══ */}
-      {topProduits.length > 0 && (
-        <Card style={{ marginBottom: 16 }}>
-          <CardHeader>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 16 }}>🏆</span>
-              <CardTitle>Top {topProduits.length} produits</CardTitle>
-            </div>
-          </CardHeader>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeader>#</TableHeader>
-                <TableHeader>Produit</TableHeader>
-                <TableHeader align="right">Qté</TableHeader>
-                <TableHeader align="right">CA</TableHeader>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {topProduits.map((p, idx) => (
-                <TableRow key={idx}>
-                  <TableCell style={{ fontWeight: 700, color: idx < 3 ? C.orange : "var(--text-muted)", fontSize: 13 }}>{idx + 1}</TableCell>
-                  <TableCell style={{ fontWeight: 600, fontSize: 12 }}>{p.produit_nom || p.produit?.nom || "—"}</TableCell>
-                  <TableCell align="right" style={{ fontSize: 12 }}>{p.quantite}</TableCell>
-                  <TableCell align="right" style={{ fontWeight: 700, color: C.success, fontSize: 12 }}>{formatAr(p.chiffre)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
-      )}
-
-      {/* ══ DÉPENSES PAR CATÉGORIE ══ */}
-      {currentCompany?.slug === "pomanay" && depenses.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle>Dépenses par catégorie</CardTitle></CardHeader>
-          <div style={{ padding: "0 18px 18px" }}>
-            {Object.entries(depenses.reduce((acc: Record<string, number>, d: Depense) => { acc[d.categorie || "Autre"] = (acc[d.categorie || "Autre"] || 0) + (d.montant || 0); return acc; }, {}))
-              .sort(([, a], [, b]) => (b as number) - (a as number))
-              .map(([cat, total]) => {
-                const totalDep = depenses.reduce((s: number, d: Depense) => s + (d.montant || 0), 0);
-                const pct = totalDep > 0 ? ((total as number) / totalDep) * 100 : 0;
-                return (
-                  <div key={cat} style={{ marginBottom: 10 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 12 }}>
-                      <span style={{ fontWeight: 600 }}>{cat}</span>
-                      <span style={{ color: "var(--text-muted)" }}>{formatAr(total as number)} · {pct.toFixed(1)}%</span>
-                    </div>
-                    <div style={{ background: "var(--bg-secondary)", height: 6, borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ width: `${pct}%`, background: C.pink, height: "100%", borderRadius: 3 }} />
-                    </div>
-                  </div>
-                );
-              })}
+    {/* ══ DÉPENSES PAR CATÉGORIE ══ */}
+    {currentCompany?.slug === "pomanay" && depenses.length > 0 && (
+      <Card>
+      <CardHeader><CardTitle>Dépenses par catégorie</CardTitle></CardHeader>
+      <div className="px-4 pb-4">
+      {Object.entries(depenses.reduce((acc: Record<string, number>, d: Depense) => { acc[d.categorie || "Autre"] = (acc[d.categorie || "Autre"] || 0) + (d.montant || 0); return acc; }, {}))
+      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .map(([cat, total]) => {
+        const totalDep = depenses.reduce((s: number, d: Depense) => s + (d.montant || 0), 0);
+        const pct = totalDep > 0 ? ((total as number) / totalDep) * 100 : 0;
+        return (
+          <div key={cat} className="mb-2.5">
+          <div className="flex justify-between mb-1 text-xs">
+          <span className="font-semibold">{cat}</span>
+          <span className="text-zinc-500">{formatAr(total as number)} · {pct.toFixed(1)}%</span>
           </div>
-        </Card>
-      )}
+          <div className="bg-[#0a0a0f] h-1.5 rounded-[3px] overflow-hidden">
+          <div className="bg-pink-400 h-full rounded-[3px]" style={{ width: `${pct}%` }} />
+          </div>
+          </div>
+        );
+      })}
+      </div>
+      </Card>
+    )}
     </div>
   );
 }

@@ -1,9 +1,39 @@
-// CompanySwitcher.tsx — Sélecteur de société
+// CompanySwitcher.tsx — Sélecteur de société (100% Tailwind pur)
 import { useEffect, useRef, useState } from "react";
 import type { Company } from "@/modules/shared/types";
 import { useCompany } from "../../context/CompanyContext";
 
-export const CompanySwitcher = () => {
+function getCompanyColorClasses(slug?: string) {
+  if (slug === "pomanay") return "bg-emerald-500 hover:bg-emerald-600";
+  if (slug === "zazatiana") return "bg-pink-500 hover:bg-pink-600";
+  return "bg-blue-500 hover:bg-blue-600";
+}
+
+function getCompanyDotColor(slug?: string) {
+  if (slug === "pomanay") return "bg-emerald-500";
+  if (slug === "zazatiana") return "bg-pink-500";
+  return "bg-blue-500";
+}
+
+function getCompanyDotBorderColor(slug?: string) {
+  if (slug === "pomanay") return "border-emerald-500";
+  if (slug === "zazatiana") return "border-pink-500";
+  return "border-blue-500";
+}
+
+function getCompanyInitials(slug?: string) {
+  if (slug === "pomanay") return "POM";
+  if (slug === "zazatiana") return "ZAZ";
+  return "LIV";
+}
+
+function getCompanyTextColor(slug?: string) {
+  if (slug === "pomanay") return "text-emerald-500";
+  if (slug === "zazatiana") return "text-pink-500";
+  return "text-blue-500";
+}
+
+export function CompanySwitcher() {
   const { currentCompany, companies, switchCompany } = useCompany();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -29,128 +59,61 @@ export const CompanySwitcher = () => {
     setIsOpen(false);
   };
 
-  const getCompanyColor = (): string => {
-    if (!currentCompany) return "var(--blue)";
-    if (currentCompany.slug === "pomanay") return "var(--green)";
-    if (currentCompany.slug === "zazatiana") return "var(--pink)";
-    return "var(--blue)";
-  };
+  const currentColor = getCompanyColorClasses(currentCompany?.slug);
 
   return (
-    <div ref={dropdownRef} style={{ position: "relative" }}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          padding: "6px 12px",
-          background: getCompanyColor(),
-          border: "none",
-          borderRadius: "8px",
-          cursor: "pointer",
-          color: "#fff",
-          fontWeight: 500,
-          fontSize: "13px",
-          transition: "all 0.2s ease",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.opacity = "0.9";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.opacity = "1";
-        }}
-      >
-        <span style={{ fontSize: 14 }}>☰</span>
-        <span>{currentCompany?.name || "Société"}</span>
-        <span style={{ fontSize: "12px" }}>{isOpen ? "^" : "v"}</span>
-      </button>
+    <div ref={dropdownRef} className="relative">
+    <button
+    type="button"
+    onClick={() => setIsOpen(!isOpen)}
+    className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-[13px] font-medium text-white transition-opacity duration-200 hover:opacity-90 ${currentColor}`}
+    >
+    <span className="text-sm">☰</span>
+    <span>{currentCompany?.name || "Société"}</span>
+    <span className="text-xs">{isOpen ? "▲" : "▼"}</span>
+    </button>
 
-      {isOpen && (
-        <div
-          style={{
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            marginTop: "4px",
-            background: "var(--card)",
-            border: "1px solid var(--border)",
-            borderRadius: "8px",
-            minWidth: "220px",
-            zIndex: 1000,
-            overflow: "hidden",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-          }}
-        >
-          {companies.map((company: Company) => {
-            const isActive = currentCompany?.id === company.id;
-            const companyColor =
-              company.slug === "pomanay"
-                ? "var(--green)"
-                : company.slug === "zazatiana"
-                  ? "var(--pink)"
-                  : "var(--blue)";
-            return (
-              <button
-                key={company.id}
-                onClick={() => handleSelectCompany(company)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  width: "100%",
-                  padding: "10px 14px",
-                  textAlign: "left",
-                  background: isActive ? "var(--bg)" : "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "var(--text)",
-                  fontWeight: isActive ? 600 : 400,
-                  borderLeft: isActive ? `3px solid ${companyColor}` : "3px solid transparent",
-                  transition: "all 0.2s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--bg)";
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) e.currentTarget.style.background = "transparent";
-                }}
-              >
-                <span
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 6,
-                    background: companyColor,
-                    color: "#fff",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 9,
-                    fontWeight: 700,
-                    flexShrink: 0,
-                  }}
-                >
-                  {company.slug === "pomanay"
-                    ? "POM"
-                    : company.slug === "zazatiana"
-                      ? "ZAZ"
-                      : "LIV"}
-                </span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "13px", fontWeight: isActive ? 600 : 400 }}>
-                    {company.name}
-                  </div>
-                  <div style={{ fontSize: "10px", color: "var(--muted)" }}>
-                    {company.type === "service" ? "Service livraison" : "Boutique"}
-                  </div>
-                </div>
-                {isActive && <span style={{ color: companyColor, fontSize: "14px" }}>OK</span>}
-              </button>
-            );
-          })}
-        </div>
-      )}
+    {isOpen && (
+      <div className="absolute left-0 top-full z-[1000] mt-1 min-w-[220px] overflow-hidden rounded-lg border border-white/[0.06] bg-[#121218] shadow-[0_4px_12px_rgba(0,0,0,0.15)] animate-fade-up">
+      {companies.map((company: Company) => {
+        const isActive = currentCompany?.id === company.id;
+        const dotColor = getCompanyDotColor(company.slug);
+        const dotBorderColor = getCompanyDotBorderColor(company.slug);
+        const initials = getCompanyInitials(company.slug);
+        const textColor = getCompanyTextColor(company.slug);
+
+        return (
+          <button
+          key={company.id}
+          type="button"
+          onClick={() => handleSelectCompany(company)}
+          className={`flex w-full items-center gap-2.5 border-l-[3px] px-3.5 py-2.5 text-left transition-colors ${isActive ? `${dotBorderColor} bg-[#08080c] font-semibold text-[#e8e8ec]` : "border-l-transparent bg-transparent font-normal text-[#a0a0b0] hover:bg-[#08080c]"}`}
+          >
+          <span
+          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[9px] font-bold text-white ${dotColor}`}
+          >
+          {initials}
+          </span>
+          <div className="flex-1">
+          <div className={`text-[13px] ${isActive ? "font-semibold" : "font-normal"}`}>
+          {company.name}
+          </div>
+          <div className="text-[10px] text-[#6b6b7b]">
+          {company.type === "service" ? "Service livraison" : "Boutique"}
+          </div>
+          </div>
+          {isActive && (
+            <span className={`text-sm ${textColor}`}>
+            ✓
+            </span>
+          )}
+          </button>
+        );
+      })}
+      </div>
+    )}
     </div>
   );
-};
+}
+
+export default CompanySwitcher;
