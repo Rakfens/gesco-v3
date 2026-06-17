@@ -468,7 +468,7 @@ export default function Stock() {
               {p.reference && <div className="text-[10px] text-muted-foreground">Réf: {p.reference}</div>}
               </TableCell>
               <TableCell>
-              {p.categorie ? <Badge variant="accent" size="sm">{p.categorie}</Badge> : "—"}
+              {p.categorie ? <Badge variant="purple" size="sm">{p.categorie}</Badge> : "—"}
               </TableCell>
               <TableCell align="right" className="text-warning font-semibold">
               {formatAr(p.prix_achat)}
