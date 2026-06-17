@@ -163,7 +163,7 @@ export default function Stock() {
 
   const [movementForm, setMovementForm] = useState({ type: "entree", quantite: 0, notes: "" });
 
-  const uniteOptions = useMemo(() => UNITES.map((u) => ({ value: u, label: u })), []);
+  const uniteOptions = UNITES;
 
   const loadData = async () => {
     if (!currentCompany) return;
