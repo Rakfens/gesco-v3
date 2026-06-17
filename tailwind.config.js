@@ -46,7 +46,7 @@ module.exports = {
         sm: "0.25rem",
       },
       fontFamily: {
-        sans: ["system-ui", "sans-serif"],
+        sans: ["Inter", "system-ui", "sans-serif"],
       },
     },
   },

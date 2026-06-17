@@ -1,15 +1,7 @@
 // src/app/layout.tsx
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClientProviders } from "@/modules/shared/components/ClientProviders";
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  variable: "--font-inter",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: { default: "HT-GesCom", template: "%s | HT-GesCom" },
@@ -34,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className={`${inter.variable} dark`} suppressHydrationWarning>
+    <html lang="fr" className="dark" suppressHydrationWarning>
     <body className="min-h-full bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased font-sans">
     <ClientProviders>{children}</ClientProviders>
     </body>
