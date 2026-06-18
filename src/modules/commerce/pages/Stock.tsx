@@ -312,11 +312,11 @@ export default function Stock() {
           </div>
           <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>Filtres</span>
         </div>
-        <div className={`grid gap-3 ${isMobile ? "grid-cols-1" : "grid-cols-[1fr_auto_auto]"} items-end`}>
+        <div className={`grid gap-3 ${isMobile ? "grid-cols-1" : "grid-cols-[1fr_auto_auto]"}`}>
           <Input placeholder="Rechercher un produit..." value={filter} onChange={(e) => setFilter(e.target.value)} />
           <Select placeholder="Toutes catégories" value={categorieFilter} onChange={(e) => setCategorieFilter(e.target.value)} options={[{ value: "", label: "Toutes" }, ...categoryOptions]} />
           {(filter || categorieFilter) && (
-            <Button variant="ghost" size="sm" onClick={() => { setFilter(""); setCategorieFilter(""); }} className="btn-press">✕ Effacer</Button>
+            <Button variant="ghost" size="sm" onClick={() => { setFilter(""); setCategorieFilter(""); }} className="btn-press h-[38px]">✕ Effacer</Button>
           )}
         </div>
       </div>
@@ -422,7 +422,7 @@ export default function Stock() {
                 <div className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>{selectedProduit.nom}</div>
                 <div className="text-xs" style={{ color: "var(--text-muted)" }}>Stock actuel : {selectedProduit.quantite_stock} {selectedProduit.unite || ""}</div>
               </div>
-              <div className={`grid gap-3 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}>
+              <div className="grid grid-cols-2 gap-3">
                 <Select label="Type" value={movementForm.type} onChange={(e) => setMovementForm({ ...movementForm, type: e.target.value })} options={[{ value: "entree", label: "📥 Entrée" }, { value: "sortie", label: "📤 Sortie" }]} />
                 <Input type="number" label="Quantité" value={String(movementForm.quantite)} onChange={(e) => setMovementForm({ ...movementForm, quantite: parseInt(e.target.value) || 0 })} />
               </div>
