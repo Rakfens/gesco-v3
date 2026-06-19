@@ -15,31 +15,12 @@ import { logger } from "@/lib/logger";
 import { getSupabase } from "@/lib/supabase";
 
 /* ─── SVG Icons ─── */
-const WalletIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
+const Icon = ({ d, size = 16, className = "" }: { d: string; size?: number; className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+    <path d={d} />
   </svg>
 );
-const CalendarIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-  </svg>
-);
-const ClockIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-  </svg>
-);
-const ChartIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-  </svg>
-);
-const CashIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
-  </svg>
-);
+
 const PlusIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
 );
@@ -58,6 +39,9 @@ const CAT_COLORS: Record<string, string> = {
   "Impressions": "var(--gold)", "Autres": "var(--warning)",
 };
 
+/* ═══════════════════════════════════════════════════════════
+   PAGE DEPENSES — Noir & Or Premium
+   ═══════════════════════════════════════════════════════════ */
 export default function Depenses() {
   const { currentCompany, success: showSuccess, error: showError, warn: showWarn } = useApp();
   const isMobile = useIsMobile();
@@ -160,6 +144,7 @@ export default function Depenses() {
     transition: `opacity 0.4s ease ${delay}s, transform 0.4s ease ${delay}s`,
   });
 
+  /* ─── Loading ─── */
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-16 gap-4">
       <div className="h-10 w-10 animate-spin rounded-full border-2" style={{ borderColor: "var(--border-default)", borderTopColor: "var(--danger)" }} />
@@ -169,6 +154,7 @@ export default function Depenses() {
 
   return (
     <div className="pb-8">
+
       {/* ══ MODALS ══ */}
       <Modal open={!!confirmDelete} onClose={() => setConfirmDelete(null)}>
         <ModalHeader title="Supprimer la dépense ?" onClose={() => setConfirmDelete(null)} />
@@ -204,60 +190,87 @@ export default function Depenses() {
       </Modal>
 
       {/* ═══════════════════════════════════════════════════════
-          HEADER
+          HEADER — Hero rouge danger
           ═══════════════════════════════════════════════════════ */}
-      <div className="relative mb-6 overflow-hidden rounded-2xl p-5" style={{ ...sectionStyle(0), background: "linear-gradient(135deg, rgba(248,113,113,0.06) 0%, rgba(201,169,110,0.03) 100%)", border: "1px solid rgba(248,113,113,0.08)" }}>
-        <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl" style={{ background: "rgba(248,113,113,0.05)" }} />
+      <div className="relative mb-6 overflow-hidden rounded-2xl p-5 sm:p-6" style={{
+        ...sectionStyle(0),
+        background: "linear-gradient(135deg, rgba(248,113,113,0.08) 0%, rgba(201,169,110,0.04) 50%, rgba(139,92,246,0.03) 100%)",
+        border: "1px solid rgba(248,113,113,0.12)",
+      }}>
+        {/* Glow decorations */}
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full blur-3xl" style={{ background: "rgba(248,113,113,0.06)" }} />
+        <div className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full blur-3xl" style={{ background: "rgba(139,92,246,0.04)" }} />
+
         <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl overflow-hidden shrink-0" style={{ border: "2px solid rgba(248,113,113,0.2)", background: "linear-gradient(135deg, rgba(17,17,20,0.9), rgba(28,28,34,0.7))", boxShadow: "0 0 20px rgba(248,113,113,0.06)" }}>
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl overflow-hidden shrink-0" style={{
+              border: "2px solid rgba(248,113,113,0.2)",
+              background: "linear-gradient(135deg, rgba(17,17,20,0.9), rgba(28,28,34,0.7))",
+              boxShadow: "0 0 24px rgba(248,113,113,0.08)",
+            }}>
               <Image src="/logo.png" alt="HT-GesCom" width={32} height={32} priority className="object-contain" />
             </div>
             <div>
               <h1 className="text-xl font-extrabold tracking-tight" style={{ color: "var(--text-primary)" }}>Dépenses</h1>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{currentCompany?.name} · {depenses.length} enregistrement{depenses.length !== 1 ? "s" : ""}</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                {currentCompany?.name} · {depenses.length} enregistrement{depenses.length !== 1 ? "s" : ""} · Total {formatAr(totalDepenses)}
+              </p>
             </div>
           </div>
-          <Button variant="danger" onClick={() => setShowModal(true)} icon={<PlusIcon />}>Nouvelle dépense</Button>
+          <Button variant="danger" onClick={() => setShowModal(true)} icon={<PlusIcon />} className="btn-press" style={{ boxShadow: "0 0 20px rgba(248,113,113,0.15)" }}>
+            Nouvelle dépense
+          </Button>
         </div>
       </div>
 
       {/* ═══════════════════════════════════════════════════════
-          STATS
+          STATS — 5 cartes avec icônes SVG
           ═══════════════════════════════════════════════════════ */}
       <div className={`grid gap-3 mb-5 ${isMobile ? "grid-cols-2" : "grid-cols-5"}`} style={sectionStyle(0.1)}>
-        <StatCard label="Aujourd'hui" value={formatAr(stats.totalJour)} color="danger" icon={<CalendarIcon size={16} />} />
-        <StatCard label="Semaine" value={formatAr(stats.totalSemaine)} color="warning" icon={<ClockIcon size={16} />} />
-        <StatCard label="Mois" value={formatAr(stats.totalMois)} color="accent" icon={<CalendarIcon size={16} />} />
-        <StatCard label="Année" value={formatAr(stats.totalAnnee)} color="purple" icon={<ChartIcon size={16} />} />
-        <StatCard label="Total" value={formatAr(totalDepenses)} color="accent" icon={<CashIcon size={16} />} />
+        <StatCard label="Aujourd'hui" value={formatAr(stats.totalJour)} color="danger" icon={<Icon d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" size={18} />} />
+        <StatCard label="Semaine" value={formatAr(stats.totalSemaine)} color="warning" icon={<Icon d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" size={18} />} />
+        <StatCard label="Mois" value={formatAr(stats.totalMois)} color="accent" icon={<Icon d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" size={18} />} />
+        <StatCard label="Année" value={formatAr(stats.totalAnnee)} color="purple" icon={<Icon d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" size={18} />} />
+        <StatCard label="Total général" value={formatAr(totalDepenses)} color="danger" icon={<Icon d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" size={18} />} />
       </div>
 
       {/* ═══════════════════════════════════════════════════════
-          RÉPARTITION PAR CATÉGORIE
+          RÉPARTITION PAR CATÉGORIE — Barres premium
           ═══════════════════════════════════════════════════════ */}
       {Object.keys(byCategorie).length > 0 && (
-        <div className="mb-5 rounded-2xl overflow-hidden" style={{ ...sectionStyle(0.15), border: "1px solid var(--border-subtle)", background: "var(--bg-card)" }}>
-          <div className="px-5 py-3.5" style={{ borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-secondary)" }}>
-            <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: "rgba(139,92,246,0.1)", color: "var(--violet)" }}>
-                <ChartIcon size={13} />
-              </div>
-              <CardTitle className="text-sm">Répartition par catégorie</CardTitle>
+        <div className="mb-5 rounded-2xl overflow-hidden" style={{
+          ...sectionStyle(0.15),
+          border: "1px solid var(--border-subtle)",
+          background: "var(--bg-card)",
+        }}>
+          <div className="px-5 py-3.5 flex items-center gap-2" style={{ borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-secondary)" }}>
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: "rgba(139,92,246,0.1)", color: "var(--violet)" }}>
+              <Icon d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" size={14} />
             </div>
+            <CardTitle className="text-sm">Répartition par catégorie</CardTitle>
+            <span className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(139,92,246,0.08)", color: "var(--violet)" }}>
+              {Object.keys(byCategorie).length} catégories
+            </span>
           </div>
           <div className="p-5">
-            {Object.entries(byCategorie).sort(([, a], [, b]) => (b as number) - (a as number)).map(([cat, total]) => {
+            {Object.entries(byCategorie).sort(([, a], [, b]) => (b as number) - (a as number)).map(([cat, total], idx) => {
               const pct = totalDepenses > 0 ? (((total as number) / totalDepenses) * 100).toFixed(1) : 0;
               const color = CAT_COLORS[cat] || "var(--gold)";
               return (
-                <div key={cat} className="mb-3">
+                <div key={cat} className="mb-3 last:mb-0" style={{ animationDelay: `${idx * 0.05}s` }}>
                   <div className="flex justify-between mb-1.5 text-xs">
-                    <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{cat}</span>
-                    <span style={{ color: "var(--text-muted)" }}>{formatAr(total as number)} · {pct}%</span>
+                    <div className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}40` }} />
+                      <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{cat}</span>
+                    </div>
+                    <span className="font-semibold" style={{ color: "var(--text-muted)" }}>{formatAr(total as number)} · {pct}%</span>
                   </div>
-                  <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--bg-elevated)" }}>
-                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color }} />
+                  <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "var(--bg-elevated)" }}>
+                    <div className="h-full rounded-full transition-all duration-700 ease-out" style={{
+                      width: `${pct}%`,
+                      background: `linear-gradient(90deg, ${color}, ${color}cc)`,
+                      boxShadow: `0 0 10px ${color}30`,
+                    }} />
                   </div>
                 </div>
               );
@@ -269,12 +282,21 @@ export default function Depenses() {
       {/* ═══════════════════════════════════════════════════════
           FILTRES
           ═══════════════════════════════════════════════════════ */}
-      <div className="mb-5 rounded-xl p-4" style={{ ...sectionStyle(0.2), border: "1px solid var(--border-subtle)", background: "var(--bg-card)" }}>
+      <div className="mb-5 rounded-2xl p-4" style={{
+        ...sectionStyle(0.2),
+        border: "1px solid var(--border-subtle)",
+        background: "var(--bg-card)",
+      }}>
         <div className="flex items-center gap-2 mb-3">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: "rgba(248,113,113,0.08)", color: "var(--danger)" }}>
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: "rgba(248,113,113,0.08)", color: "var(--danger)" }}>
             <FilterIcon />
           </div>
           <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>Filtres</span>
+          {(filterCat || filterDebut || filterFin) && (
+            <span className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(248,113,113,0.08)", color: "var(--danger)" }}>
+              Filtré
+            </span>
+          )}
         </div>
         <div className={`grid gap-3 ${isMobile ? "grid-cols-1" : "grid-cols-[auto_auto_auto_1fr_auto]"} items-end`}>
           <Select value={filterCat} onChange={(e) => setFilterCat(e.target.value)} options={[{ value: "", label: "Toutes catégories" }, ...categories.map((c) => ({ value: c, label: c }))]} />
@@ -282,54 +304,123 @@ export default function Depenses() {
           <Input type="date" label="Au" value={filterFin} onChange={(e) => setFilterFin(e.target.value)} />
           <div />
           {(filterCat || filterDebut || filterFin) && (
-            <Button variant="ghost" size="sm" onClick={() => { setFilterCat(""); setFilterDebut(""); setFilterFin(""); }} className="h-[38px]">✕ Effacer</Button>
+            <Button variant="ghost" size="sm" onClick={() => { setFilterCat(""); setFilterDebut(""); setFilterFin(""); }} className="h-[38px] btn-press">✕ Effacer</Button>
           )}
         </div>
       </div>
 
       {/* ═══════════════════════════════════════════════════════
-          TABLE
+          TABLE — Design premium avec footer total
           ═══════════════════════════════════════════════════════ */}
-      <div className="rounded-2xl overflow-hidden" style={{ ...sectionStyle(0.25), border: "1px solid var(--border-subtle)", background: "var(--bg-card)" }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableHeader>Date</TableHeader>
-              <TableHeader>Catégorie</TableHeader>
-              <TableHeader>Description</TableHeader>
-              <TableHeader align="right">Montant</TableHeader>
-              <TableHeader align="center">Action</TableHeader>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {depenses.length === 0 ? (
-              <TableEmpty colSpan={5} message="Aucune dépense enregistrée" />
-            ) : depenses.map((d) => (
-              <TableRow key={d.id}>
-                <TableCell className="text-xs"><span style={{ color: "var(--text-muted)" }}>{formatDate(d.date_depense || d.date || "")}</span></TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full" style={{ background: CAT_COLORS[d.categorie || ""] || "var(--gold)" }} />
-                    <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{d.categorie}</span>
+      {isMobile ? (
+        /* ── Mobile: Cards ── */
+        <div className="flex flex-col gap-3" style={sectionStyle(0.25)}>
+          {depenses.length === 0 ? (
+            <div className="rounded-2xl py-14 text-center" style={{ border: "1px solid var(--border-subtle)", background: "var(--bg-card)" }}>
+              <div className="text-4xl mb-3">💰</div>
+              <div className="text-sm" style={{ color: "var(--text-muted)" }}>Aucune dépense enregistrée.</div>
+              <div className="text-xs mt-1" style={{ color: "var(--text-faint)" }}>Cliquez sur "Nouvelle dépense" pour commencer.</div>
+            </div>
+          ) : depenses.map((d, idx) => {
+            const color = CAT_COLORS[d.categorie || ""] || "var(--gold)";
+            return (
+              <div key={d.id} className="rounded-2xl overflow-hidden transition-all duration-200" style={{
+                ...sectionStyle(0.25 + idx * 0.03),
+                border: "1px solid var(--border-subtle)",
+                background: "var(--bg-card)",
+              }}>
+                <div className="p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}40` }} />
+                        <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>{d.categorie}</span>
+                      </div>
+                      <div className="text-xs" style={{ color: "var(--text-muted)" }}>{d.description}</div>
+                      <div className="text-[10px] mt-0.5" style={{ color: "var(--text-faint)" }}>{formatDate(d.date_depense || d.date || "")}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-extrabold" style={{ color: "var(--danger)" }}>{formatAr(d.montant)}</div>
+                    </div>
                   </div>
-                </TableCell>
-                <TableCell className="text-xs"><span style={{ color: "var(--text-primary)" }}>{d.description}</span></TableCell>
-                <TableCell align="right" className="font-bold text-sm"><span style={{ color: "var(--danger)" }}>{formatAr(d.montant)}</span></TableCell>
-                <TableCell align="center">
-                  <Button variant="danger" size="sm" onClick={() => setConfirmDelete(d)} icon={<TrashIcon />}>🗑️</Button>
-                </TableCell>
+                  <div className="flex justify-end">
+                    <Button variant="danger" size="sm" onClick={() => setConfirmDelete(d)} icon={<TrashIcon />} className="btn-press">Supprimer</Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* ── Desktop: Table ── */
+        <div className="rounded-2xl overflow-hidden" style={{
+          ...sectionStyle(0.25),
+          border: "1px solid var(--border-subtle)",
+          background: "var(--bg-card)",
+        }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableHeader className="col-sm">Date</TableHeader>
+                <TableHeader className="col-lg">Catégorie</TableHeader>
+                <TableHeader className="col-md">Description</TableHeader>
+                <TableHeader className="col-sm" align="right">Montant (Ar)</TableHeader>
+                <TableHeader className="col-xs" align="center">Action</TableHeader>
               </TableRow>
-            ))}
-          </TableBody>
-          {depenses.length > 0 && (
-            <TableFooter>
-              <TableCell colSpan={3} className="font-bold"><span style={{ color: "var(--text-primary)" }}>TOTAL</span></TableCell>
-              <TableCell align="right" className="font-extrabold"><span style={{ color: "var(--danger)" }}>{formatAr(totalDepenses)}</span></TableCell>
-              <td />
-            </TableFooter>
-          )}
-        </Table>
-      </div>
+            </TableHead>
+            <TableBody>
+              {depenses.length === 0 ? (
+                <TableEmpty colSpan={5} message="Aucune dépense enregistrée" />
+              ) : depenses.map((d) => {
+                const color = CAT_COLORS[d.categorie || ""] || "var(--gold)";
+                return (
+                  <TableRow key={d.id}>
+                    <TableCell className="col-sm text-xs truncate whitespace-nowrap">
+                      <span style={{ color: "var(--text-muted)" }}>{formatDate(d.date_depense || d.date || "")}</span>
+                    </TableCell>
+                    <TableCell className="col-lg truncate whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 8px ${color}40` }} />
+                        <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{d.categorie}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="col-md text-xs truncate whitespace-nowrap">
+                      <span style={{ color: "var(--text-primary)" }}>{d.description}</span>
+                    </TableCell>
+                    <TableCell className="col-sm font-bold text-sm truncate whitespace-nowrap" align="right">
+                      <span style={{ color: "var(--danger)" }}>{formatAr(d.montant)}</span>
+                    </TableCell>
+                    <TableCell className="col-xs" align="center">
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDelete(d)}
+                        className="inline-flex items-center justify-center h-7 w-7 rounded-lg transition-colors duration-150 hover:bg-[rgba(248,113,113,0.12)]"
+                        style={{ color: "var(--danger)" }}
+                        title="Supprimer"
+                      >
+                        🗑️
+                      </button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+            {depenses.length > 0 && (
+              <TableFooter>
+                <TableCell className="col-sm">{''}</TableCell>
+                <TableCell className="col-lg">{''}</TableCell>
+                <TableCell className="col-md font-bold">
+                  <span style={{ color: "var(--text-primary)" }}>TOTAL GÉNÉRAL</span>
+                </TableCell>
+                <TableCell className="col-sm font-extrabold text-base" align="right">
+                  <span style={{ color: "var(--danger)" }}>{formatAr(totalDepenses)}</span>
+                </TableCell>
+                <TableCell className="col-xs">{''}</TableCell>
+              </TableFooter>
+            )}
+          </Table>
+        </div>
+      )}
     </div>
   );
 }

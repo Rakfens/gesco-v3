@@ -69,6 +69,7 @@ export default function Inventaire() {
   } | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [confirmFinaliser, setConfirmFinaliser] = useState(false);
+  const [searchCount, setSearchCount] = useState('');
 
   useEffect(() => { setTimeout(() => setMounted(true), 50); }, []);
 
@@ -131,6 +132,13 @@ export default function Inventaire() {
 
   const totalProductsToCount = uncountedProducts.length + countedProducts.length;
   const progressPercent = totalProductsToCount > 0 ? (countedProducts.length / totalProductsToCount) * 100 : 0;
+
+  const filteredUncountedProducts = searchCount.trim()
+    ? uncountedProducts.filter((p) =>
+        p.nom?.toLowerCase().includes(searchCount.toLowerCase()) ||
+        (p as unknown as { reference?: string }).reference?.toLowerCase().includes(searchCount.toLowerCase())
+      )
+    : uncountedProducts;
 
   const sectionStyle = (delay: number): React.CSSProperties => ({
     opacity: mounted ? 1 : 0, transform: mounted ? "translateY(0)" : "translateY(10px)",
@@ -222,12 +230,20 @@ export default function Inventaire() {
                 <CardTitle className="text-sm">Produits à compter</CardTitle>
               </div>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(201,169,110,0.08)", color: "var(--gold)" }}>
-                {uncountedProducts.length} restant{uncountedProducts.length !== 1 ? "s" : ""}
+                {filteredUncountedProducts.length} restant{filteredUncountedProducts.length !== 1 ? "s" : ""}
               </span>
+            </div>
+            <div className="mt-3">
+              <Input
+                type="text"
+                placeholder="Rechercher par nom ou référence..."
+                value={searchCount}
+                onChange={(e) => setSearchCount(e.target.value)}
+              />
             </div>
           </div>
           <div className="p-4 grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2">
-            {uncountedProducts.map((p) => (
+            {filteredUncountedProducts.map((p) => (
               <button key={p.id} onClick={() => { setSelectedProduct(p); setCountValue(String(p.quantite_stock || "")); setShowCountModal(true); }} className="py-3 px-3 rounded-xl text-left btn-press transition-all duration-150" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
                 <div className="font-semibold text-xs truncate" style={{ color: "var(--text-primary)" }}>{p.nom}</div>
                 <div className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>Stock: {p.quantite_stock} {p.unite || ""}</div>

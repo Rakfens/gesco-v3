@@ -18,44 +18,7 @@ import {
 import { fetchProduits } from "@/modules/commerce/services/produitService";
 
 /* ─── SVG Icons ─── */
-const BoxIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-  </svg>
-);
-const CheckIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
-const AlertIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-  </svg>
-);
-const CashIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
-  </svg>
-);
-const PlusIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-);
-const EditIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-);
-const TrashIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
-);
-const EyeIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-);
-const CartIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 01-8 0" /></svg>
-);
-const FilterIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
-);
+import { Icon } from "@/modules/shared/components/ui";
 
 /* ─── Types ─── */
 interface PackProduitForm { produit_id: string; quantite: number; }
@@ -217,7 +180,7 @@ export default function PacksPage() {
           </div>
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" onClick={() => router.push("/commerce/ventes")}>← Ventes</Button>
-            <Button variant="primary" onClick={openCreateModal} icon={<PlusIcon />}>Nouveau pack</Button>
+            <Button variant="primary" onClick={openCreateModal} icon={<Icon d="M12 5v19M5 12h19" size={14} />}>Nouveau pack</Button>
           </div>
         </div>
       </div>
@@ -226,10 +189,10 @@ export default function PacksPage() {
           STATS
           ═══════════════════════════════════════════════════════ */}
       <div className={`grid gap-3 mb-5 ${isMobile ? "grid-cols-2" : "grid-cols-4"}`} style={sectionStyle(0.1)}>
-        <StatCard label="Total packs" value={stats.total} color="accent" icon={<BoxIcon size={18} />} />
-        <StatCard label="Disponibles" value={stats.disponibles} color="success" icon={<CheckIcon size={18} />} />
-        <StatCard label="Indisponibles" value={stats.indisponibles} color="danger" icon={<AlertIcon size={18} />} />
-        <StatCard label="Marge totale" value={formatAr(stats.margeTotal)} color="accent" icon={<CashIcon size={18} />} />
+        <StatCard label="Total packs" value={stats.total} color="accent" icon={<Icon d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" size={18} />} />
+        <StatCard label="Disponibles" value={stats.disponibles} color="success" icon={<Icon d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" size={18} />} />
+        <StatCard label="Indisponibles" value={stats.indisponibles} color="danger" icon={<Icon d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" size={18} />} />
+        <StatCard label="Marge totale" value={formatAr(stats.margeTotal)} color="accent" icon={<Icon d="M2 5h20v14H2zM2 10h20" size={18} />} />
       </div>
 
       {/* ═══════════════════════════════════════════════════════
@@ -238,7 +201,7 @@ export default function PacksPage() {
       <div className="mb-5 rounded-xl p-4" style={{ ...sectionStyle(0.15), border: "1px solid var(--border-subtle)", background: "var(--bg-card)" }}>
         <div className="flex items-center gap-2 mb-3">
           <div className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: "rgba(201,169,110,0.08)", color: "var(--gold)" }}>
-            <FilterIcon />
+            <Icon d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" size={14} />
           </div>
           <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>Filtres</span>
         </div>
@@ -294,10 +257,10 @@ export default function PacksPage() {
                       </div>
                     </div>
                     <div className="flex gap-1.5">
-                      <Button variant="success" size="sm" onClick={() => router.push("/commerce/ventes")} icon={<CartIcon />}>Vendre</Button>
-                      <Button variant="secondary" size="sm" onClick={() => openDetailModal(pack.id)} icon={<EyeIcon />}>Détails</Button>
-                      <Button variant="primary" size="sm" onClick={() => openEditModal(pack)} icon={<EditIcon />}>✏️</Button>
-                      <Button variant="danger" size="sm" onClick={() => setShowDeleteModal(pack.id)} icon={<TrashIcon />}>🗑️</Button>
+                      <Button variant="success" size="sm" onClick={() => router.push("/commerce/ventes")} icon={<Icon d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h21M16 10a4 4 0 01-8 0" size={12} />}>Vendre</Button>
+                      <Button variant="secondary" size="sm" onClick={() => openDetailModal(pack.id)} icon={<Icon d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 15a3 3 0 100-6 3 3 0 000 6z" size={12} />}>Détails</Button>
+                      <Button variant="primary" size="sm" onClick={() => openEditModal(pack)} icon={<Icon d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" size={12} />}>Modifier</Button>
+                      <Button variant="danger" size="sm" onClick={() => setShowDeleteModal(pack.id)} icon={<Icon d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" size={12} />}>Supprimer</Button>
                     </div>
                   </div>
                 </div>
@@ -322,7 +285,7 @@ export default function PacksPage() {
           </div>
           <div className="flex items-center gap-2 mb-3">
             <div className="flex h-5 w-5 items-center justify-center rounded-md" style={{ background: "rgba(201,169,110,0.1)", color: "var(--gold)" }}>
-              <BoxIcon size={12} />
+              <Icon d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" size={12} />
             </div>
             <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>Produits du pack ({formProduits.length})</span>
           </div>
@@ -338,7 +301,7 @@ export default function PacksPage() {
               </div>
             ))}
           </div>
-          <Button variant="secondary" size="sm" onClick={addProduitLine} icon={<PlusIcon />}>Ajouter un produit</Button>
+          <Button variant="secondary" size="sm" onClick={addProduitLine} icon={<Icon d="M12 5v19M5 12h19" size={14} />}>Ajouter un produit</Button>
         </ModalBody>
         <ModalFooter>
           <Button variant="secondary" onClick={() => { setShowModal(false); resetForm(); }}>Annuler</Button>
@@ -390,26 +353,26 @@ export default function PacksPage() {
               ); })()}
               <div className="flex items-center gap-2 mb-2">
                 <div className="flex h-5 w-5 items-center justify-center rounded-md" style={{ background: "rgba(201,169,110,0.1)", color: "var(--gold)" }}>
-                  <BoxIcon size={12} />
+                  <Icon d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" size={12} />
                 </div>
                 <span className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>Composition du pack</span>
               </div>
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableHeader>Produit</TableHeader>
-                    <TableHeader align="center">Qté nécessaire</TableHeader>
-                    <TableHeader align="right">Stock actuel</TableHeader>
-                    <TableHeader align="center">Statut</TableHeader>
+                    <TableHeader className="col-lg">Produit</TableHeader>
+                    <TableHeader className="col-sm" align="center">Qté nécessaire</TableHeader>
+                    <TableHeader className="col-sm" align="right">Stock actuel</TableHeader>
+                    <TableHeader className="col-sm" align="center">Statut</TableHeader>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {detailStock.map((ds, idx) => (
                     <TableRow key={idx}>
-                      <TableCell className="font-semibold"><span style={{ color: "var(--text-primary)" }}>{ds.nom}</span></TableCell>
-                      <TableCell align="center"><span style={{ color: "var(--text-primary)" }}>{ds.quantite}</span></TableCell>
-                      <TableCell align="right"><span style={{ color: ds.suffisant ? "var(--text-primary)" : "var(--danger)" }}>{ds.stock}</span></TableCell>
-                      <TableCell align="center">
+                      <TableCell className="col-lg font-semibold"><span style={{ color: "var(--text-primary)" }}>{ds.nom}</span></TableCell>
+                      <TableCell className="col-sm" align="center"><span style={{ color: "var(--text-primary)" }}>{ds.quantite}</span></TableCell>
+                      <TableCell className="col-sm" align="right"><span style={{ color: ds.suffisant ? "var(--text-primary)" : "var(--danger)" }}>{ds.stock}</span></TableCell>
+                      <TableCell className="col-sm" align="center">
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: ds.suffisant ? "rgba(52,211,153,0.08)" : "rgba(248,113,113,0.08)", color: ds.suffisant ? "var(--success)" : "var(--danger)" }}>
                           {ds.suffisant ? "✅ OK" : "❌ Insuffisant"}
                         </span>

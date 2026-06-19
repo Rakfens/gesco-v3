@@ -1,5 +1,6 @@
 // ui/index.ts - Export centralisé du design system (100% Tailwind pur)
-export type { BadgeVariant } from "./Badge";
+export { Icon } from "./Icon";
+export type { default as IconProps } from "./Icon";
 export { Badge } from "./Badge";
 export { Button } from "./Button";
 export { Card, CardContent, CardFooter, CardHeader, CardTitle, SectionHeader } from "./Card";

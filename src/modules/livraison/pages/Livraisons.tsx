@@ -3,14 +3,14 @@
 
 import { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import Image from "next/image";
-import { Card, Input, Select } from "@/modules/shared/components/ui";
+import { Input, Select } from "@/modules/shared/components/ui";
 import { useCompany } from "@/modules/shared/context/CompanyContext";
 import { useApp } from "@/modules/shared/context/AppContext";
 import { useIsMobile } from "@/modules/shared/hooks/useIsMobile";
 import type { Livraison } from "@/modules/shared/types";
 import { LivraisonForm } from "../components/LivraisonForm";
 import { TODAY, formatAr, STATUTS, PAIE_MODES } from "@/modules/shared/utils/constants";
-import { StatusIcon, Icon } from "@/modules/shared/components/ui/Icons";
+import { StatusIcon, Icon, NavIcons } from "@/modules/shared/components/ui/Icons";
 
 /* ─── Status config ─── */
 const STATUS_OPTIONS = [
@@ -25,50 +25,6 @@ type SortKey = "date" | "montant" | "statut";
 function getStatusConfig(statut?: string) {
   return STATUS_OPTIONS.find((s) => s.key === statut) || STATUS_OPTIONS[0];
 }
-
-/* ─── SVG Icons ─── */
-const PlusIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
-);
-const XIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
-const SearchIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-  </svg>
-);
-const DownloadIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-  </svg>
-);
-const EditIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
-const TrashIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-  </svg>
-);
-const FilterIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-  </svg>
-);
-const TruckIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3" />
-    <rect x="9" y="11" width="14" height="10" rx="2" />
-    <circle cx="12" cy="21" r="1.5" fill="currentColor" /><circle cx="20" cy="21" r="1.5" fill="currentColor" />
-  </svg>
-);
 
 export default function LivraisonsPage() {
   const { currentCompany } = useCompany();
@@ -310,7 +266,7 @@ export default function LivraisonsPage() {
           boxShadow: showForm ? "none" : "0 4px 16px rgba(201,169,110,0.2)",
         }}
       >
-        {showForm ? <><XIcon /> Fermer</> : <><PlusIcon /> Nouvelle livraison</>}
+        {showForm ? <><Icon d="M18 6L6 18M6 6l12 12" size={16} /> Fermer</> : <><Icon d="M12 5v14M5 12h14" size={16} strokeWidth={2.5} /> Nouvelle livraison</>}
       </button>
 
       {/* ═══════════════════════════════════════════════════════
@@ -342,7 +298,7 @@ export default function LivraisonsPage() {
       <div className="mb-5 rounded-xl p-4" style={{ ...sectionStyle(0.2), border: "1px solid var(--border-subtle)", background: "var(--bg-card)" }}>
         <div className="flex items-center gap-2 mb-3">
           <div className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: "rgba(201,169,110,0.08)", color: "var(--gold)" }}>
-            <FilterIcon />
+            <Icon d="M22 3H2l10 9.46V19l4 2V12.46L22 3z" size={14} />
           </div>
           <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>Filtres</span>
         </div>
@@ -443,7 +399,7 @@ export default function LivraisonsPage() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold btn-press transition-colors"
               style={{ border: "1px solid var(--border-default)", color: "var(--text-muted)" }}
             >
-              <DownloadIcon />
+              <Icon d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" size={14} />
               Exporter CSV
             </button>
           </div>
@@ -497,7 +453,7 @@ export default function LivraisonsPage() {
                         </div>
                         <div className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>
                           {l.client_donneur || "—"} → {l.destinataire || "—"}
-                          {l.agent_nom && <span style={{ color: "var(--gold)" }}> · <TruckIcon /> {l.agent_nom}</span>}
+                          {l.agent_nom && <span style={{ color: "var(--gold)" }}> · <NavIcons.truck size={14} /> {l.agent_nom}</span>}
                         </div>
                         <div className="text-[10px] mt-0.5" style={{ color: "var(--text-faint)" }}>
                           {l.date} {l.destinataire_lieu && `· 📍 ${l.destinataire_lieu}`}
@@ -550,7 +506,7 @@ export default function LivraisonsPage() {
                           className="w-8 h-8 rounded-lg flex items-center justify-center btn-press transition-colors"
                           style={{ border: "1px solid var(--border-default)", background: "var(--bg-secondary)", color: "var(--text-muted)" }}
                         >
-                          <EditIcon />
+                          <Icon d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" size={14} />
                         </button>
                         <button
                           onClick={() => handleDelete(l.id)}
@@ -562,7 +518,7 @@ export default function LivraisonsPage() {
                             color: deleteConfirmId === l.id ? "white" : "var(--danger)",
                           }}
                         >
-                          {deleteConfirmId === l.id ? "⚠" : <TrashIcon />}
+                          {deleteConfirmId === l.id ? "⚠" : <Icon d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" size={14} />}
                         </button>
                       </div>
                     </div>

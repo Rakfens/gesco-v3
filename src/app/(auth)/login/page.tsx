@@ -144,7 +144,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen" style={{ background: "var(--bg-primary)" }}>
       {/* ═══════════════════════════════════════════════════════
-          LEFT PANEL — Branding
+          LEFT PANEL — Branding (desktop only)
           ═══════════════════════════════════════════════════════ */}
       <div
         className="relative hidden lg:flex lg:w-[48%] flex-col items-center justify-center overflow-hidden px-12"
@@ -206,7 +206,7 @@ export default function LoginPage() {
             />
             {/* Logo box */}
             <div
-              className="relative flex h-[180px] w-[180px] items-center justify-center rounded-3xl overflow-hidden border"
+              className="relative flex h-[200px] w-[200px] items-center justify-center rounded-3xl overflow-hidden border"
               style={{
                 borderColor: "rgba(201,169,110,0.3)",
                 background: "linear-gradient(135deg, rgba(17,17,20,0.9), rgba(28,28,34,0.7))",
@@ -216,8 +216,8 @@ export default function LoginPage() {
               <Image
                 src="/logo.png"
                 alt="HT-GesCom"
-                width={130}
-                height={130}
+                width={150}
+                height={150}
                 priority
                 className="object-contain"
                 style={{
@@ -309,22 +309,31 @@ export default function LoginPage() {
             mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
           }`}
         >
-          <div
-            className="flex h-[80px] w-[80px] items-center justify-center rounded-2xl overflow-hidden border mb-4"
-            style={{
-              borderColor: "rgba(201,169,110,0.3)",
-              background: "linear-gradient(135deg, rgba(17,17,20,0.9), rgba(28,28,34,0.7))",
-              boxShadow: "0 0 30px rgba(201,169,110,0.08)",
-            }}
-          >
-            <Image
-              src="/logo.png"
-              alt="HT-GesCom"
-              width={56}
-              height={56}
-              priority
-              className="object-contain"
+          <div className="relative mb-4">
+            <div
+              className="absolute -inset-2 rounded-full blur-xl"
+              style={{ background: "rgba(201,169,110,0.12)" }}
             />
+            <div
+              className="relative flex h-[100px] w-[100px] items-center justify-center rounded-2xl overflow-hidden border"
+              style={{
+                borderColor: "rgba(201,169,110,0.3)",
+                background: "linear-gradient(135deg, rgba(17,17,20,0.9), rgba(28,28,34,0.7))",
+                boxShadow: "0 0 30px rgba(201,169,110,0.08)",
+              }}
+            >
+              <Image
+                src="/logo.png"
+                alt="HT-GesCom"
+                width={72}
+                height={72}
+                priority
+                className="object-contain"
+                style={{
+                  filter: "drop-shadow(0 0 12px rgba(201,169,110,0.2))",
+                }}
+              />
+            </div>
           </div>
           <h1 className="text-[24px] font-extrabold tracking-tight" style={{ color: "var(--text-primary)" }}>
             HT-GesCom

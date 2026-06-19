@@ -26,16 +26,7 @@ const PlusIcon = () => (
     <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
   </svg>
 );
-const EditIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
-const TrashIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-  </svg>
-);
+
 
 interface PanierItem {
   produit_id: string; nom: string; quantite: number; prix_unitaire: number; sous_total: number;
@@ -224,8 +215,8 @@ export default function Achats() {
                       ))}
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <Button variant="secondary" size="sm" onClick={() => handleEditAchat(a)} icon={<EditIcon />}>Modifier</Button>
-                      <Button variant="danger" size="sm" onClick={() => setConfirmDelete(a.id)} icon={<TrashIcon />}>Supprimer</Button>
+                      <Button variant="secondary" size="sm" onClick={() => handleEditAchat(a)}>✏️ Modifier</Button>
+                      <Button variant="danger" size="sm" onClick={() => setConfirmDelete(a.id)}>🗑️ Supprimer</Button>
                     </div>
                   </div>
                 </div>
@@ -247,14 +238,14 @@ export default function Achats() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableHeader>Commande</TableHeader>
-                <TableHeader>Fournisseur</TableHeader>
-                <TableHeader>Date</TableHeader>
-                <TableHeader align="right">Montant</TableHeader>
-                <TableHeader align="right">Payé</TableHeader>
-                <TableHeader align="right">Solde</TableHeader>
-                <TableHeader align="center">Statut</TableHeader>
-                <TableHeader align="center">Actions</TableHeader>
+                <TableHeader className="col-md">Commande</TableHeader>
+                <TableHeader className="col-lg">Fournisseur</TableHeader>
+                <TableHeader className="col-sm">Date</TableHeader>
+                <TableHeader align="right" className="col-sm">Montant</TableHeader>
+                <TableHeader align="right" className="col-sm">Payé</TableHeader>
+                <TableHeader align="right" className="col-sm">Solde</TableHeader>
+                <TableHeader align="center" className="col-sm">Statut</TableHeader>
+                <TableHeader align="center" className="col-md">Actions</TableHeader>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -264,17 +255,17 @@ export default function Achats() {
                 const solde = (a.montant_total || 0) - (a.montant_paye || 0);
                 return (
                   <TableRow key={a.id}>
-                    <TableCell className="font-semibold font-mono text-xs"><span style={{ color: "var(--text-primary)" }}>{a.numero_commande || "—"}</span></TableCell>
-                    <TableCell><span style={{ color: "var(--text-primary)" }}>{a.fournisseur_nom || "—"}</span></TableCell>
-                    <TableCell className="text-xs"><span style={{ color: "var(--text-muted)" }}>{a.date_achat ? new Date(a.date_achat).toLocaleDateString("fr-FR") : "—"}</span></TableCell>
-                    <TableCell align="right" className="font-semibold"><span style={{ color: "var(--gold)" }}>{formatAr(a.montant_total)}</span></TableCell>
-                    <TableCell align="right"><span style={{ color: "var(--success)" }}>{formatAr(a.montant_paye)}</span></TableCell>
-                    <TableCell align="right" className="font-semibold"><span style={{ color: solde > 0 ? "var(--danger)" : "var(--success)" }}>{solde > 0 ? formatAr(solde) : "Payé"}</span></TableCell>
-                    <TableCell align="center"><Badge variant={solde > 0 ? "warning" : "success"} size="sm">{solde > 0 ? "Crédit" : "Soldé"}</Badge></TableCell>
-                    <TableCell align="center">
+                    <TableCell className="col-md font-semibold font-mono text-xs truncate whitespace-nowrap"><span style={{ color: "var(--text-primary)" }}>{a.numero_commande || "—"}</span></TableCell>
+                    <TableCell className="col-lg truncate whitespace-nowrap"><span style={{ color: "var(--text-primary)" }}>{a.fournisseur_nom || "—"}</span></TableCell>
+                    <TableCell className="col-sm text-xs"><span style={{ color: "var(--text-muted)" }}>{a.date_achat ? new Date(a.date_achat).toLocaleDateString("fr-FR") : "—"}</span></TableCell>
+                    <TableCell align="right" className="col-sm font-semibold"><span style={{ color: "var(--gold)" }}>{formatAr(a.montant_total)}</span></TableCell>
+                    <TableCell align="right" className="col-sm"><span style={{ color: "var(--success)" }}>{formatAr(a.montant_paye)}</span></TableCell>
+                    <TableCell align="right" className="col-sm font-semibold"><span style={{ color: solde > 0 ? "var(--danger)" : "var(--success)" }}>{solde > 0 ? formatAr(solde) : "Payé"}</span></TableCell>
+                    <TableCell align="center" className="col-sm"><Badge variant={solde > 0 ? "warning" : "success"} size="sm">{solde > 0 ? "Crédit" : "Soldé"}</Badge></TableCell>
+                    <TableCell align="center" className="col-md">
                       <div className="flex gap-1 justify-center">
-                        <Button variant="secondary" size="sm" onClick={() => handleEditAchat(a)} icon={<EditIcon />}>✏️</Button>
-                        <Button variant="danger" size="sm" onClick={() => setConfirmDelete(a.id)} icon={<TrashIcon />}>🗑️</Button>
+                        <Button variant="secondary" size="sm" onClick={() => handleEditAchat(a)}>✏️</Button>
+                        <Button variant="danger" size="sm" onClick={() => setConfirmDelete(a.id)}>🗑️</Button>
                       </div>
                     </TableCell>
                   </TableRow>

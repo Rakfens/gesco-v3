@@ -5,9 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { logger } from "@/lib/logger";
 import {
-  Card, CardContent, CardHeader, CardTitle, SkeletonGrid, StatCard, StatusBadge,
+  Card, CardContent, CardHeader, CardTitle, Icon, SkeletonGrid, StatCard, StatusBadge,
   Table, TableBody, TableCell, TableEmpty, TableHead, TableHeader, TableRow,
 } from "@/modules/shared/components/ui";
+import { getSupabase } from "@/lib/supabase";
 import { useCompany } from "@/modules/shared/context/CompanyContext";
 import { useIsMobile } from "@/modules/shared/hooks/useIsMobile";
 import type { Produit, Vente } from "@/modules/shared/types";
@@ -15,13 +16,6 @@ import { formatAr } from "@/modules/shared/utils/constants";
 import { fetchAchats } from "../services/achatService";
 import { fetchProduits, getAlertesStockBas, getValeurTotaleStock } from "../services/produitService";
 import { fetchVentes } from "../services/venteService";
-
-/* ─── SVG Icon helper ─── */
-const Icon = ({ d, size = 16, className = "" }: { d: string; size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d={d} />
-  </svg>
-);
 
 const today = () => new Date().toISOString().split("T")[0];
 const firstOfMonth = () => { const d = new Date(); d.setDate(1); return d.toISOString().split("T")[0]; };
@@ -57,15 +51,19 @@ export default function CommerceDashboard() {
     setLoading(true); setError(null);
     try {
       const t = today(); const fm = firstOfMonth();
-      const [toutesVentes, produits, alertesData, valeurStock, achats] = await Promise.all([
+      const [toutesVentes, produits, alertesData, valeurStock, achats, depenses] = await Promise.all([
         fetchVentes(), fetchProduits(), getAlertesStockBas(), getValeurTotaleStock(), fetchAchats({ dateDebut: fm, dateFin: t }),
+        getSupabase().from('depenses').select('*').eq('company_id', currentCompany.id).gte('date_depense', fm).lte('date_depense', t),
       ]);
       const ventesJour = toutesVentes.filter((v) => (v.date_vente || "").split("T")[0] === t);
       const ventesMois = toutesVentes.filter((v) => (v.date_vente || "").split("T")[0] >= fm);
       const caJour = ventesJour.reduce((s, v) => s + (v.montant_total || 0), 0);
       const caMois = ventesMois.reduce((s, v) => s + (v.montant_total || 0), 0);
       const totalAchats = achats.reduce((s, a) => s + (a.montant_total || 0), 0);
-      setStats({ ventesJour: ventesJour.length, ventesMois: ventesMois.length, caJour, caMois, nbProduits: produits.length, stockBas: alertesData.length, valeurStock, achatsMois: totalAchats, depensesJour: 0, depensesMois: 0 });
+      const depensesData = depenses.data || [];
+      const depensesJour = depensesData.filter((d: { date_depense?: string }) => (d.date_depense || '').split('T')[0] === t).reduce((s: number, d: { montant?: number }) => s + (d.montant || 0), 0);
+      const depensesMois = depensesData.reduce((s: number, d: { montant?: number }) => s + (d.montant || 0), 0);
+      setStats({ ventesJour: ventesJour.length, ventesMois: ventesMois.length, caJour, caMois, nbProduits: produits.length, stockBas: alertesData.length, valeurStock, achatsMois: totalAchats, depensesJour, depensesMois });
       setRecentVentes(toutesVentes.slice(0, 5)); setAlertes(alertesData.slice(0, 5));
     } catch (err: unknown) { logger.error("Erreur dashboard:", err); setError("Erreur lors du chargement des données."); }
     finally { setLoading(false); }
@@ -155,25 +153,10 @@ export default function CommerceDashboard() {
           STATS
           ═══════════════════════════════════════════════════════ */}
       <div className={`grid gap-3 mb-6 ${isMobile ? "grid-cols-2" : "grid-cols-4"}`} style={sectionStyle(0.1)}>
-        {[
-          { label: "Ventes du mois", value: stats.ventesMois, color: "blue", icon: "M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" },
-          { label: "CA du mois", value: formatAr(stats.caMois), color: "emerald", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
-          { label: "Produits", value: stats.nbProduits, color: "violet", icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" },
-          { label: "Valeur stock", value: formatAr(stats.valeurStock), color: "amber", icon: "M12 1v22M17 5H9.5a3.5 3.5 0 010-7h5a3.5 3.5 0 000 7H6M17 19h-5.5a3.5 3.5 0 010-7H19" },
-        ].map((s) => {
-          const c = colorMap[s.color];
-          return (
-            <div key={s.label} className="rounded-xl p-4 transition-all duration-200 hover:-translate-y-0.5" style={{ border: "1px solid var(--border-subtle)", background: "var(--bg-card)" }}>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{s.label}</span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: c.bg, color: c.text }}>
-                  <Icon d={s.icon} size={15} className="text-current" />
-                </div>
-              </div>
-              <div className="text-2xl font-black tracking-tight" style={{ color: "var(--text-primary)" }}>{s.value}</div>
-            </div>
-          );
-        })}
+        <StatCard label="Ventes du mois" value={stats.ventesMois} color="blue" icon={<Icon d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" size={18} />} />
+        <StatCard label="CA du mois" value={formatAr(stats.caMois)} color="success" icon={<Icon d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" size={18} />} />
+        <StatCard label="Produits" value={stats.nbProduits} color="purple" icon={<Icon d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" size={18} />} />
+        <StatCard label="Valeur stock" value={formatAr(stats.valeurStock)} color="accent" icon={<Icon d="M12 1v22M17 5H9.5a3.5 3.5 0 010-7h5a3.5 3.5 0 000 7H6M17 19h-5.5a3.5 3.5 0 010-7H19" size={18} />} />
       </div>
 
       {/* ═══════════════════════════════════════════════════════

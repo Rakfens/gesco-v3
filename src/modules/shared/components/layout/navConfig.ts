@@ -9,7 +9,8 @@ export interface NavItem {
 export const NAV_CONFIG = {
   service: [
     { key: "dashboard", label: "Tableau de bord", href: "/livraison/dashboard", icon: "grid" },
-    { key: "livraison", label: "Livraison", href: "/livraison/livraisons", icon: "truck" },
+    { key: "livraison", label: "Livraisons", href: "/livraison/livraisons", icon: "truck" },
+    { key: "liste_matin", label: "Liste du matin", href: "/livraison/liste-matin", icon: "printer" },
     { key: "historique", label: "Historique", href: "/livraison/historique", icon: "clock" },
     { key: "gerant", label: "Gérant", href: "/livraison/gerant", icon: "user" },
     { key: "recap", label: "Récap", href: "/livraison/recap", icon: "chart" },

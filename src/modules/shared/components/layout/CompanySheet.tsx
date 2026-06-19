@@ -1,5 +1,6 @@
 // src/modules/shared/components/layout/CompanySheet.tsx
 import type { Company } from "@/modules/shared/context/CompanyContext";
+import { CheckIcon } from "@/modules/shared/components/ui";
 import { getCompanyMeta, getLogoSrc } from "./company";
 
 interface CompanySheetProps {
@@ -8,12 +9,6 @@ interface CompanySheetProps {
   onSelect: (company: Company) => void;
   onClose: () => void;
 }
-
-const CheckIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-  <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
 
 export function CompanySheet({
   companies,

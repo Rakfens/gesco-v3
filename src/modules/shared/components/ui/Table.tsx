@@ -10,7 +10,7 @@ interface TableProps {
 export function Table({ children, className = "" }: TableProps) {
   return (
     <div className={`overflow-x-auto rounded-xl border border-[var(--border-subtle)] ${className}`}>
-    <table className="w-full border-collapse">{children}</table>
+    <table className="w-full border-collapse table-fixed">{children}</table>
     </div>
   );
 }
@@ -36,16 +36,18 @@ interface TableHeaderProps {
   children: ReactNode;
   align?: "left" | "center" | "right";
   className?: string;
+  colClassName?: string;
 }
 
 export function TableHeader({
   children,
   align = "left",
   className = "",
+  colClassName = "",
 }: TableHeaderProps) {
   const alignClass = align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left";
   return (
-    <th className={`whitespace-nowrap px-3.5 py-2.5 font-semibold ${alignClass} ${className}`}>
+    <th className={`whitespace-nowrap overflow-hidden text-ellipsis px-3.5 py-2.5 font-semibold ${alignClass} ${colClassName} ${className}`}>
     {children}
     </th>
   );
@@ -81,6 +83,7 @@ interface TableCellProps {
   align?: "left" | "center" | "right";
   colSpan?: number;
   className?: string;
+  colClassName?: string;
 }
 
 export function TableCell({
@@ -88,12 +91,13 @@ export function TableCell({
   align = "left",
   colSpan,
   className = "",
+  colClassName = "",
 }: TableCellProps) {
   const alignClass = align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left";
   return (
     <td
     colSpan={colSpan}
-    className={`px-3.5 py-2.5 text-[13px] text-[var(--text-primary)] ${alignClass} ${className}`}
+    className={`overflow-hidden text-ellipsis px-3.5 py-2.5 text-[13px] text-[var(--text-primary)] ${alignClass} ${colClassName} ${className}`}
     >
     {children}
     </td>

@@ -8,14 +8,18 @@ import { getSupabase } from "@/lib/supabase";
 import { CompanySheet } from "@/modules/shared/components/layout/CompanySheet";
 import { getCompanyMeta } from "@/modules/shared/components/layout/company";
 import { NAV_CONFIG } from "@/modules/shared/components/layout/navConfig";
+import { Icon } from "@/modules/shared/components/ui";
+import { useTheme } from "@/modules/shared/context/ThemeContext";
+import { ThemeProvider } from "@/modules/shared/context/ThemeContext";
 import { AppProvider } from "@/modules/shared/context/AppContext";
 import { CompanyProvider, useCompany } from "@/modules/shared/context/CompanyContext";
 
+const SunIcon = () => <Icon d="M12 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm0 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm9.07-9.07a1 1 0 010 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.41 0zM6.34 17.66a1 1 0 010 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.41 0zM21 11a1 1 0 110 2h-1a1 1 0 110-2h1zM4 11a1 1 0 110 2H3a1 1 0 110-2h1zM17.66 6.34a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM6.34 6.34a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41z" size={16} />;
+const MoonIcon = () => <Icon d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" size={16} />;
+
 /* ─── Icons ─── */
 const SvgIcon = ({ d, size = 16 }: { d: string; size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-  <path d={d} />
-  </svg>
+  <Icon d={d} size={size} />
 );
 
 const NavIcon = ({ icon }: { icon: string }) => {
@@ -34,35 +38,21 @@ const NavIcon = ({ icon }: { icon: string }) => {
     list: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
     wallet: "M21 12V7H5a2 2 0 010-4h14v4M3 5v14a2 2 0 002 2h16v-2M21 12v7a2 2 0 01-2 2h-2",
     document: "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6",
+    printer: "M6 9V2a2 2 0 012-2h8a2 2 0 012 2v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12",
   };
   return <SvgIcon d={icons[icon] || icons.grid} />;
 };
 
-const LogoutIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-  </svg>
-);
-
-const MenuIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-  <line x1="3" y1="6" x2="21" y2="6" />
-  <line x1="3" y1="12" x2="21" y2="12" />
-  <line x1="3" y1="18" x2="21" y2="18" />
-  </svg>
-);
-
-const ChevronDownIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-  <polyline points="6 9 12 15 18 9" />
-  </svg>
-);
+const LogoutIcon = () => <Icon d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" size={14} />;
+const MenuIcon = () => <Icon d="M3 6h18M3 12h18M3 18h18" size={22} />;
+const ChevronDownIcon = () => <Icon d="M6 9l6 6 6-6" size={12} />;
 
 /* ─── Layout Content ─── */
 function LayoutContent({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const { currentCompany, companies, switchCompany } = useCompany();
+  const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -214,6 +204,16 @@ function LayoutContent({ children }: { children: ReactNode }) {
         </nav>
         </div>
 
+        {/* Theme Toggle */}
+        <button
+        type="button"
+        onClick={toggleTheme}
+        className="flex items-center justify-center w-9 h-9 rounded-lg border border-[var(--border-default)] bg-[var(--bg-elevated)] text-[var(--text-muted)] cursor-pointer transition-all duration-200 hover:text-[var(--text-primary)] hover:border-[var(--border-active)] hover:bg-[var(--bg-card)]"
+        title={theme === "dark" ? "Mode clair" : "Mode sombre"}
+        >
+        {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+        </button>
+
         {/* User Profile */}
         <div className="flex items-center gap-2.5 py-[5px] pl-1.5 pr-3.5 rounded-full border border-[var(--border-default)] bg-[var(--bg-elevated)]">
         <div className="w-[30px] h-[30px] rounded-full bg-gradient-to-br from-[var(--gold)] to-[var(--violet)] flex items-center justify-center text-xs font-extrabold text-[var(--bg-primary)]">
@@ -226,8 +226,8 @@ function LayoutContent({ children }: { children: ReactNode }) {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-auto p-7 bg-[var(--bg-primary)]">
-        <div className="animate-fade-up max-w-[1600px] mx-auto">
+        <main className="flex-1 overflow-auto p-7 bg-[var(--bg-primary)] transition-colors duration-300">
+        <div className="animate-fade-up max-w-[1600px] mx-auto" key={pathname}>
         {children}
         </div>
         </main>
@@ -250,9 +250,11 @@ function LayoutContent({ children }: { children: ReactNode }) {
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <CompanyProvider>
+    <ThemeProvider>
     <AppProvider>
     <LayoutContent>{children}</LayoutContent>
     </AppProvider>
+    </ThemeProvider>
     </CompanyProvider>
   );
 }

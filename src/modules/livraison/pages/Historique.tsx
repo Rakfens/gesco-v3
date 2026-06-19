@@ -8,12 +8,13 @@ import { ClientFeedbackModal } from "@/modules/shared/components/Modals/ClientFe
 import {
   Badge, Button, Card, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select,
 } from "@/modules/shared/components/ui";
+import { Icon } from "@/modules/shared/components/ui";
 import { useApp } from "@/modules/shared/context/AppContext";
 import { useCompany } from "@/modules/shared/context/CompanyContext";
 import { useIsMobile } from "@/modules/shared/hooks/useIsMobile";
 import type { Livraison } from "@/modules/shared/types";
 import { formatAr, PAIE_MODES, STATUTS, TODAY } from "@/modules/shared/utils/constants";
-import { StatusIcon, Icon } from "@/modules/shared/components/ui/Icons";
+import { StatusIcon } from "@/modules/shared/components/ui/Icons";
 
 /* ─── Status config ─── */
 const STATUS_CONFIG = [
@@ -41,34 +42,17 @@ function getStatusCfg(statut?: string) {
   return STATUS_CONFIG.find((s) => s.key === statut) || STATUS_CONFIG[0];
 }
 
-/* ─── SVG Icons ─── */
-const HistoryIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
-const DownloadIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-  </svg>
-);
-const FilterIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-  </svg>
-);
-const FileTextIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-    <polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
-  </svg>
-);
+const EditIcon = () => <Icon d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" size={10} />;
+const TrashIcon = () => <Icon d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" size={10} />;
+const DownloadIcon = () => <Icon d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" size={14} />;
+const FilterIcon = () => <Icon d="M22 3H2l10 9.46V19l4 2V12.46L22 3z" size={14} />;
+const FileTextIcon = () => <Icon d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6" size={14} />;
+const HistoryIcon = () => <Icon d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" size={16} />;
 
 export default function Historique() {
   const { livraisons = [], agents = [], showToast, livraisonCrud } = useApp();
   const { currentCompany } = useCompany();
   const isMobile = useIsMobile();
-  const logoUrl = currentCompany?.logo_url ? String(currentCompany.logo_url) : null;
 
   const [histDate, setHistDate] = useState<string>(TODAY());
   const [histAgent, setHistAgent] = useState<string>("tous");
@@ -138,7 +122,7 @@ export default function Historique() {
   const startEdit = (l: Livraison) => { setEditId(l.id); setEditData({ ...l }); };
 
   const handleExportCSV = useCallback(() => {
-    const bom = "\uFEFF";
+    const bom = "﻿";
     const header = "Date;Colis;Donneur;Destinataire;Agent;Montant;Frais;Statut\n";
     const rows = livsFiltered.map((l) => [l.date, l.colis, l.client_donneur, l.destinataire, l.agent_nom || "", l.montant || 0, l.frais || 0, STATUTS[l.statut || ""]?.label || ""].join(";")).join("\n");
     const blob = new Blob([bom + header + rows], { type: "text/csv;charset=utf-8;" });
@@ -153,55 +137,38 @@ export default function Historique() {
   }, [livsFiltered, histDate, showToast]);
 
   const sectionStyle = (delay: number): React.CSSProperties => ({
-    opacity: mounted ? 1 : 0,
-    transform: mounted ? "translateY(0)" : "translateY(10px)",
+    opacity: mounted ? 1 : 0, transform: mounted ? "translateY(0)" : "translateY(10px)",
     transition: `opacity 0.4s ease ${delay}s, transform 0.4s ease ${delay}s`,
   });
 
   return (
     <div className="pb-8">
-      {/* ═══════════════════════════════════════════════════════
-          HEADER
-          ═══════════════════════════════════════════════════════ */}
-      <div
-        className="relative mb-6 overflow-hidden rounded-2xl p-5"
-        style={{
-          ...sectionStyle(0),
-          background: "linear-gradient(135deg, rgba(139,92,246,0.06) 0%, rgba(201,169,110,0.03) 100%)",
-          border: "1px solid rgba(139,92,246,0.08)",
-        }}
-      >
+      {/* HEADER */}
+      <div className="relative mb-6 overflow-hidden rounded-2xl p-5" style={{
+        ...sectionStyle(0),
+        background: "linear-gradient(135deg, rgba(139,92,246,0.06) 0%, rgba(201,169,110,0.03) 100%)",
+        border: "1px solid rgba(139,92,246,0.08)",
+      }}>
         <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl" style={{ background: "rgba(139,92,246,0.05)" }} />
         <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3.5">
-            <div
-              className="flex h-12 w-12 items-center justify-center rounded-xl overflow-hidden shrink-0"
-              style={{
-                border: "2px solid rgba(139,92,246,0.2)",
-                background: "linear-gradient(135deg, rgba(17,17,20,0.9), rgba(28,28,34,0.7))",
-                boxShadow: "0 0 20px rgba(139,92,246,0.06)",
-              }}
-            >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl overflow-hidden shrink-0" style={{
+              border: "2px solid rgba(139,92,246,0.2)",
+              background: "linear-gradient(135deg, rgba(17,17,20,0.9), rgba(28,28,34,0.7))",
+              boxShadow: "0 0 20px rgba(139,92,246,0.06)",
+            }}>
               <Image src="/logo.png" alt="HT-GesCom" width={32} height={32} priority className="object-contain" />
             </div>
             <div>
-              <h1 className="text-xl font-extrabold tracking-tight" style={{ color: "var(--text-primary)" }}>
-                Historique
-              </h1>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                {currentCompany?.name}
-              </p>
+              <h1 className="text-xl font-extrabold tracking-tight" style={{ color: "var(--text-primary)" }}>Historique</h1>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{currentCompany?.name}</p>
             </div>
           </div>
-          <Button variant="success" size="sm" onClick={handleExportCSV} icon={<DownloadIcon />}>
-            Exporter CSV
-          </Button>
+          <Button variant="success" size="sm" onClick={handleExportCSV} icon={<DownloadIcon />}>Exporter CSV</Button>
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════
-          STATS
-          ═══════════════════════════════════════════════════════ */}
+      {/* STATS */}
       <div className={`grid gap-3 mb-5 ${isMobile ? "grid-cols-2" : "grid-cols-4"}`} style={sectionStyle(0.1)}>
         {[
           { label: "Total", value: stats.total, color: "var(--gold)", icon: "M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" },
@@ -209,17 +176,11 @@ export default function Historique() {
           { label: "Retournés", value: stats.retournes, color: "var(--danger)", icon: "M1 4v6h6M23 20v-6h-6M20.49 9A9 9 0 1015.24 4.76L23 9" },
           { label: "Montant", value: formatAr(stats.montant), color: "var(--violet)", icon: "M12 1v22M17 5H9.5a3.5 3.5 0 010-7h5a3.5 3.5 0 000 7H6M17 19h-5.5a3.5 3.5 0 010-7H19" },
         ].map((s) => (
-          <div
-            key={s.label}
-            className="rounded-xl p-3.5 transition-all duration-200 hover:-translate-y-0.5"
-            style={{ border: "1px solid var(--border-subtle)", background: "var(--bg-card)" }}
-          >
+          <div key={s.label} className="rounded-xl p-3.5 transition-all duration-200 hover:-translate-y-0.5" style={{ border: "1px solid var(--border-subtle)", background: "var(--bg-card)" }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{s.label}</span>
               <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: `${s.color}10`, color: s.color }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d={s.icon} />
-                </svg>
+                <Icon d={s.icon} size={13} />
               </div>
             </div>
             <div className="text-xl font-extrabold" style={{ color: s.color }}>{s.value}</div>
@@ -227,9 +188,7 @@ export default function Historique() {
         ))}
       </div>
 
-      {/* ═══════════════════════════════════════════════════════
-          FILTRES
-          ═══════════════════════════════════════════════════════ */}
+      {/* FILTRES */}
       <div className="mb-5 rounded-xl p-4" style={{ ...sectionStyle(0.15), border: "1px solid var(--border-subtle)", background: "var(--bg-card)" }}>
         <div className="flex items-center gap-2 mb-3">
           <div className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: "rgba(139,92,246,0.08)", color: "var(--violet)" }}>
@@ -242,33 +201,20 @@ export default function Historique() {
           <Select label="Agent" value={histAgent} onChange={(e) => setHistAgent(e.target.value)} options={[{ value: "tous", label: "Tous" }, ...agents.map((a) => ({ value: a.nom, label: a.nom }))]} />
           <Select label="Statut" value={histStatut} onChange={(e) => setHistStatut(e.target.value)} options={[{ value: "tous", label: "Tous" }, ...STATUS_OPTIONS]} />
         </div>
-
-        {/* Status quick-filter chips */}
         <div className="flex flex-wrap gap-1.5 mt-3">
-          <button
-            onClick={() => setHistStatut("tous")}
-            className="rounded-full px-3 py-1 text-[10px] font-semibold btn-press transition-all"
-            style={{
-              border: histStatut === "tous" ? "1.5px solid var(--violet)" : "1px solid var(--border-default)",
-              background: histStatut === "tous" ? "rgba(139,92,246,0.08)" : "transparent",
-              color: histStatut === "tous" ? "var(--violet)" : "var(--text-muted)",
-            }}
-          >
-            Tous ({livsFiltered.length})
-          </button>
+          <button onClick={() => setHistStatut("tous")} className="rounded-full px-3 py-1 text-[10px] font-semibold btn-press transition-all" style={{
+            border: histStatut === "tous" ? "1.5px solid var(--violet)" : "1px solid var(--border-default)",
+            background: histStatut === "tous" ? "rgba(139,92,246,0.08)" : "transparent",
+            color: histStatut === "tous" ? "var(--violet)" : "var(--text-muted)",
+          }}>Tous ({livsFiltered.length})</button>
           {STATUS_CONFIG.map((opt) => {
             const count = livsFiltered.filter((l) => l.statut === opt.key).length;
             return (
-              <button
-                key={opt.key}
-                onClick={() => setHistStatut(opt.key)}
-                className="flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-semibold btn-press transition-all"
-                style={{
-                  border: histStatut === opt.key ? `1.5px solid ${opt.color}` : "1px solid var(--border-default)",
-                  background: histStatut === opt.key ? opt.bg : "transparent",
-                  color: histStatut === opt.key ? opt.color : "var(--text-muted)",
-                }}
-              >
+              <button key={opt.key} onClick={() => setHistStatut(opt.key)} className="flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-semibold btn-press transition-all" style={{
+                border: histStatut === opt.key ? `1.5px solid ${opt.color}` : "1px solid var(--border-default)",
+                background: histStatut === opt.key ? opt.bg : "transparent",
+                color: histStatut === opt.key ? opt.color : "var(--text-muted)",
+              }}>
                 <StatusIcon name={opt.icon} size={10} className="text-current" />
                 {opt.label} ({count})
               </button>
@@ -277,73 +223,87 @@ export default function Historique() {
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════
-          CLIENT FEEDBACK MODAL
-          ═══════════════════════════════════════════════════════ */}
+      {/* CLIENT FEEDBACK MODAL */}
       <ClientFeedbackModal
-        fbClient={fbClient}
-        setFbClient={setFbClient}
-        histDate={histDate}
-        fbRecup={fbRecup}
-        setFbRecup={setFbRecup}
-        fbProvince={fbProvince}
-        setFbProvince={setFbProvince}
-        livraisons={livsFiltered}
-        onClose={() => setFbClient(null)}
+        fbClient={fbClient} setFbClient={setFbClient} histDate={histDate}
+        fbRecup={fbRecup} setFbRecup={setFbRecup} fbProvince={fbProvince} setFbProvince={setFbProvince}
+        livraisons={livsFiltered} onClose={() => setFbClient(null)}
       />
 
-      {/* ═══════════════════════════════════════════════════════
-          VERSEMENT PAR CLIENT
-          ═══════════════════════════════════════════════════════ */}
+      {/* VERSEMENT PAR CLIENT */}
       {statsByClient.length > 0 && (
         <div style={sectionStyle(0.2)}>
           <div className="flex items-center gap-2.5 mb-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: "rgba(201,169,110,0.08)", color: "var(--gold)" }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
-              </svg>
+              <HistoryIcon />
             </div>
             <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Versement par client</h2>
             <Badge variant="default" size="sm">{statsByClient.length} client{statsByClient.length !== 1 ? "s" : ""}</Badge>
           </div>
-
           <div className="flex flex-col gap-4">
             {statsByClient.map((cl, cIdx) => {
-              // Group livs by status
               const livrees = cl.livs.filter((l) => l.statut === "livre");
               const retournees = cl.livs.filter((l) => l.statut === "retourne");
               const reportees = cl.livs.filter((l) => l.statut === "reporte");
               const enCours = cl.livs.filter((l) => l.statut === "en_cours");
 
+              const renderLivGroup = (title: string, items: Livraison[], color: string, bg: string, iconName: string) => {
+                if (items.length === 0) return null;
+                return (
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-md" style={{ background: `${color}19`, color }}>
+                        <StatusIcon name={iconName as "check" | "rotate-left" | "xmark" | "clock"} size={11} className="text-current" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color }}>{title} ({items.length})</span>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      {items.map((l) => (
+                        <div key={l.id} className="rounded-lg overflow-hidden" style={{ background: `${bg}08`, borderLeft: `2px solid ${color}` }}>
+                          <div className="flex items-center gap-2.5 px-3 py-2">
+                            <div className="flex h-6 w-6 items-center justify-center rounded-md shrink-0" style={{ background: `${color}14`, color }}>
+                              <StatusIcon name={iconName as "check" | "rotate-left" | "xmark" | "clock"} size={12} className="text-current" />
+                            </div>
+                            <span className="text-[12px] font-semibold flex-1 min-w-[80px] truncate" style={{ color: "var(--text-primary)" }}>{l.colis}</span>
+                            <span className="text-[10px] truncate" style={{ color: "var(--text-muted)" }}>{l.destinataire}</span>
+                            <span className="text-[11px] font-bold whitespace-nowrap" style={{ color: l.paiement === "client" ? "var(--info)" : color }}>
+                              {l.paiement === "client" ? "Client" : l.montant ? formatAr(l.montant) : "—"}
+                            </span>
+                            <button onClick={() => startEdit(l)} className="w-6 h-6 rounded-md flex items-center justify-center btn-press shrink-0" style={{ border: "1px solid var(--border-default)", color: "var(--text-muted)" }}>
+                              <EditIcon />
+                            </button>
+                            <button onClick={() => setConfirmDelete(l.id)} className="w-6 h-6 rounded-md flex items-center justify-center btn-press shrink-0" style={{ border: "1px solid rgba(248,113,113,0.12)", color: "var(--danger)", background: "rgba(248,113,113,0.03)" }}>
+                              <TrashIcon />
+                            </button>
+                          </div>
+                          {l.remarque && (
+                            <div className="px-3 pb-2">
+                              <div className="rounded-md px-2.5 py-1.5 text-[10px]" style={{ background: `${bg}0a`, borderLeft: `2px solid ${color}`, color: "var(--text-secondary)" }}>
+                                <span className="font-bold" style={{ color }}>Motif : </span>{l.remarque}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              };
+
               return (
-                <div
-                  key={cl.client}
-                  className="rounded-2xl overflow-hidden transition-all duration-200"
-                  style={{
-                    ...sectionStyle(0.25 + cIdx * 0.05),
-                    border: "1px solid var(--border-subtle)",
-                    background: "var(--bg-card)",
-                  }}
-                >
-                  {/* Client header */}
+                <div key={cl.client} className="rounded-2xl overflow-hidden transition-all duration-200" style={{
+                  ...sectionStyle(0.25 + cIdx * 0.05),
+                  border: "1px solid var(--border-subtle)", background: "var(--bg-card)",
+                }}>
                   <div className="px-4 py-3.5" style={{ background: "linear-gradient(135deg, rgba(201,169,110,0.04) 0%, rgba(139,92,246,0.02) 100%)", borderBottom: "1px solid var(--border-subtle)" }}>
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-3">
-                        <div
-                          className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-extrabold"
-                          style={{
-                            background: "linear-gradient(135deg, var(--gold), var(--violet))",
-                            color: "var(--bg-primary)",
-                            boxShadow: "0 0 12px rgba(201,169,110,0.12)",
-                          }}
-                        >
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-extrabold" style={{ background: "linear-gradient(135deg, var(--gold), var(--violet))", color: "var(--bg-primary)", boxShadow: "0 0 12px rgba(201,169,110,0.12)" }}>
                           {cl.client.charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <div className="font-extrabold text-sm" style={{ color: "var(--text-primary)" }}>{cl.client}</div>
-                          <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                            {cl.livs.length} colis · {formatAr(cl.totalMontant + cl.totalFrais)} total
-                          </div>
+                          <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>{cl.livs.length} colis · {formatAr(cl.totalMontant + cl.totalFrais)} total</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -351,183 +311,15 @@ export default function Historique() {
                           <div className="text-[9px] uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>À verser</div>
                           <div className="font-extrabold text-sm" style={{ color: "var(--success)" }}>{formatAr(cl.totalMontant)}</div>
                         </div>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => { setFbClient(cl.client); setFbRecup("0"); setFbProvince("0"); }}
-                          icon={<FileTextIcon />}
-                        >
-                          PDF
-                        </Button>
+                        <Button variant="primary" size="sm" onClick={() => { setFbClient(cl.client); setFbRecup("0"); setFbProvince("0"); }} icon={<FileTextIcon />}>PDF</Button>
                       </div>
                     </div>
                   </div>
-
-                  {/* Livraisons grouped by status */}
                   <div className="p-4">
-                    {/* Livrés */}
-                    {livrees.length > 0 && (
-                      <div className="mb-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-md" style={{ background: "rgba(52,211,153,0.1)", color: "var(--success)" }}>
-                            <StatusIcon name="check" size={11} className="text-current" />
-                          </div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--success)" }}>
-                            Livrés ({livrees.length})
-                          </span>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          {livrees.map((l) => (
-                            <div
-                              key={l.id}
-                              className="flex items-center gap-2.5 px-3 py-2 rounded-lg"
-                              style={{ background: "rgba(52,211,153,0.03)", borderLeft: "2px solid var(--success)" }}
-                            >
-                              <div className="flex h-6 w-6 items-center justify-center rounded-md shrink-0" style={{ background: "rgba(52,211,153,0.08)", color: "var(--success)" }}>
-                                <StatusIcon name="check" size={12} className="text-current" />
-                              </div>
-                              <span className="text-[12px] font-semibold flex-1 min-w-[80px]" style={{ color: "var(--text-primary)" }}>{l.colis}</span>
-                              <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{l.destinataire}</span>
-                              <span className="text-[11px] font-bold" style={{ color: l.paiement === "client" ? "var(--info)" : "var(--success)" }}>
-                                {l.paiement === "client" ? "Client" : l.montant ? formatAr(l.montant) : "—"}
-                              </span>
-                              <button onClick={() => startEdit(l)} className="w-6 h-6 rounded-md flex items-center justify-center btn-press" style={{ border: "1px solid var(--border-default)", color: "var(--text-muted)" }}>
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                              </button>
-                              <button onClick={() => setConfirmDelete(l.id)} className="w-6 h-6 rounded-md flex items-center justify-center btn-press" style={{ border: "1px solid rgba(248,113,113,0.12)", color: "var(--danger)", background: "rgba(248,113,113,0.03)" }}>
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Retournés */}
-                    {retournees.length > 0 && (
-                      <div className="mb-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-md" style={{ background: "rgba(248,113,113,0.1)", color: "var(--danger)" }}>
-                            <StatusIcon name="rotate-left" size={11} className="text-current" />
-                          </div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--danger)" }}>
-                            Retournés ({retournees.length})
-                          </span>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          {retournees.map((l) => (
-                            <div
-                              key={l.id}
-                              className="rounded-lg overflow-hidden"
-                              style={{ background: "rgba(248,113,113,0.03)", borderLeft: "2px solid var(--danger)" }}
-                            >
-                              <div className="flex items-center gap-2.5 px-3 py-2">
-                                <div className="flex h-6 w-6 items-center justify-center rounded-md shrink-0" style={{ background: "rgba(248,113,113,0.08)", color: "var(--danger)" }}>
-                                  <StatusIcon name="rotate-left" size={12} className="text-current" />
-                                </div>
-                                <span className="text-[12px] font-semibold flex-1 min-w-[80px]" style={{ color: "var(--text-primary)" }}>{l.colis}</span>
-                                <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{l.destinataire}</span>
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(248,113,113,0.08)", color: "var(--danger)" }}>Retourné</span>
-                                <button onClick={() => startEdit(l)} className="w-6 h-6 rounded-md flex items-center justify-center btn-press" style={{ border: "1px solid var(--border-default)", color: "var(--text-muted)" }}>
-                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                                </button>
-                                <button onClick={() => setConfirmDelete(l.id)} className="w-6 h-6 rounded-md flex items-center justify-center btn-press" style={{ border: "1px solid rgba(248,113,113,0.12)", color: "var(--danger)", background: "rgba(248,113,113,0.03)" }}>
-                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
-                                </button>
-                              </div>
-                              {l.remarque && (
-                                <div className="px-3 pb-2">
-                                  <div className="rounded-md px-2.5 py-1.5 text-[10px]" style={{ background: "rgba(248,113,113,0.04)", borderLeft: "2px solid var(--danger)", color: "var(--text-secondary)" }}>
-                                    <span className="font-bold" style={{ color: "var(--danger)" }}>Motif : </span>{l.remarque}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Reportés */}
-                    {reportees.length > 0 && (
-                      <div className="mb-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-md" style={{ background: "rgba(139,92,246,0.1)", color: "var(--violet)" }}>
-                            <StatusIcon name="xmark" size={11} className="text-current" />
-                          </div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--violet)" }}>
-                            Reportés ({reportees.length})
-                          </span>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          {reportees.map((l) => (
-                            <div
-                              key={l.id}
-                              className="rounded-lg overflow-hidden"
-                              style={{ background: "rgba(139,92,246,0.03)", borderLeft: "2px solid var(--violet)" }}
-                            >
-                              <div className="flex items-center gap-2.5 px-3 py-2">
-                                <div className="flex h-6 w-6 items-center justify-center rounded-md shrink-0" style={{ background: "rgba(139,92,246,0.08)", color: "var(--violet)" }}>
-                                  <StatusIcon name="xmark" size={12} className="text-current" />
-                                </div>
-                                <span className="text-[12px] font-semibold flex-1 min-w-[80px]" style={{ color: "var(--text-primary)" }}>{l.colis}</span>
-                                <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{l.destinataire}</span>
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(139,92,246,0.08)", color: "var(--violet)" }}>Reporté</span>
-                                <button onClick={() => startEdit(l)} className="w-6 h-6 rounded-md flex items-center justify-center btn-press" style={{ border: "1px solid var(--border-default)", color: "var(--text-muted)" }}>
-                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                                </button>
-                                <button onClick={() => setConfirmDelete(l.id)} className="w-6 h-6 rounded-md flex items-center justify-center btn-press" style={{ border: "1px solid rgba(248,113,113,0.12)", color: "var(--danger)", background: "rgba(248,113,113,0.03)" }}>
-                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
-                                </button>
-                              </div>
-                              {l.remarque && (
-                                <div className="px-3 pb-2">
-                                  <div className="rounded-md px-2.5 py-1.5 text-[10px]" style={{ background: "rgba(139,92,246,0.04)", borderLeft: "2px solid var(--violet)", color: "var(--text-secondary)" }}>
-                                    <span className="font-bold" style={{ color: "var(--violet)" }}>Motif : </span>{l.remarque}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* En cours */}
-                    {enCours.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-md" style={{ background: "rgba(201,169,110,0.1)", color: "var(--gold)" }}>
-                            <StatusIcon name="clock" size={11} className="text-current" />
-                          </div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--gold)" }}>
-                            En cours ({enCours.length})
-                          </span>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          {enCours.map((l) => (
-                            <div
-                              key={l.id}
-                              className="flex items-center gap-2.5 px-3 py-2 rounded-lg"
-                              style={{ background: "rgba(201,169,110,0.03)", borderLeft: "2px solid var(--gold)" }}
-                            >
-                              <div className="flex h-6 w-6 items-center justify-center rounded-md shrink-0" style={{ background: "rgba(201,169,110,0.08)", color: "var(--gold)" }}>
-                                <StatusIcon name="clock" size={12} className="text-current" />
-                              </div>
-                              <span className="text-[12px] font-semibold flex-1 min-w-[80px]" style={{ color: "var(--text-primary)" }}>{l.colis}</span>
-                              <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{l.destinataire}</span>
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(201,169,110,0.08)", color: "var(--gold)" }}>En cours</span>
-                              <button onClick={() => startEdit(l)} className="w-6 h-6 rounded-md flex items-center justify-center btn-press" style={{ border: "1px solid var(--border-default)", color: "var(--text-muted)" }}>
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                              </button>
-                              <button onClick={() => setConfirmDelete(l.id)} className="w-6 h-6 rounded-md flex items-center justify-center btn-press" style={{ border: "1px solid rgba(248,113,113,0.12)", color: "var(--danger)", background: "rgba(248,113,113,0.03)" }}>
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    {renderLivGroup("Livrés", livrees, "var(--success)", "rgba(52,211,153,0.03)", "check")}
+                    {renderLivGroup("Retournés", retournees, "var(--danger)", "rgba(248,113,113,0.03)", "rotate-left")}
+                    {renderLivGroup("Reportés", reportees, "var(--violet)", "rgba(139,92,246,0.03)", "xmark")}
+                    {renderLivGroup("En cours", enCours, "var(--gold)", "rgba(201,169,110,0.03)", "clock")}
                   </div>
                 </div>
               );
@@ -536,9 +328,7 @@ export default function Historique() {
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════════════
-          EMPTY STATE
-          ═══════════════════════════════════════════════════════ */}
+      {/* EMPTY STATE */}
       {livsFiltered.length === 0 && (
         <div className="rounded-2xl py-12 text-center" style={{ border: "1px solid var(--border-subtle)", background: "var(--bg-card)" }}>
           <div className="text-4xl mb-3">📋</div>
@@ -546,9 +336,7 @@ export default function Historique() {
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════════════
-          MODAL ÉDITION
-          ═══════════════════════════════════════════════════════ */}
+      {/* MODAL ÉDITION */}
       <Modal open={!!editId} onClose={() => setEditId(null)}>
         <ModalHeader title="Modifier la livraison" onClose={() => setEditId(null)} />
         <ModalBody>
@@ -572,9 +360,7 @@ export default function Historique() {
         </ModalFooter>
       </Modal>
 
-      {/* ═══════════════════════════════════════════════════════
-          MODAL SUPPRESSION
-          ═══════════════════════════════════════════════════════ */}
+      {/* MODAL SUPPRESSION */}
       <Modal open={!!confirmDelete} onClose={() => setConfirmDelete(null)}>
         <ModalHeader title="Supprimer ?" onClose={() => setConfirmDelete(null)} />
         <ModalBody>

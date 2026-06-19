@@ -319,14 +319,14 @@ export default function Ventes() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableHeader>Facture</TableHeader>
-                <TableHeader>Client</TableHeader>
-                <TableHeader>Date</TableHeader>
-                <TableHeader align="right">Montant</TableHeader>
-                <TableHeader align="right">Payé</TableHeader>
-                <TableHeader align="right">Solde</TableHeader>
-                <TableHeader align="center">Statut</TableHeader>
-                <TableHeader align="center">Actions</TableHeader>
+                <TableHeader className="col-md">Facture</TableHeader>
+                <TableHeader className="col-lg">Client</TableHeader>
+                <TableHeader className="col-sm">Date</TableHeader>
+                <TableHeader align="right" className="col-sm">Montant</TableHeader>
+                <TableHeader align="right" className="col-sm">Payé</TableHeader>
+                <TableHeader align="right" className="col-sm">Solde</TableHeader>
+                <TableHeader align="center" className="col-sm">Statut</TableHeader>
+                <TableHeader align="center" className="col-lg">Actions</TableHeader>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -336,18 +336,18 @@ export default function Ventes() {
                 const solde = v.reste_a_payer || 0;
                 return (
                   <TableRow key={v.id}>
-                    <TableCell className="font-semibold font-mono text-xs"><span style={{ color: "var(--text-secondary)" }}>{v.numero_facture || "—"}</span></TableCell>
-                    <TableCell className="text-sm"><span style={{ color: "var(--text-secondary)" }}>{v.client_nom || "—"}</span></TableCell>
-                    <TableCell className="text-xs"><span style={{ color: "var(--text-muted)" }}>{v.date_vente ? new Date(v.date_vente).toLocaleDateString("fr-FR") : "—"}</span></TableCell>
-                    <TableCell align="right" className="font-bold"><span style={{ color: "var(--text-primary)" }}>{formatAr(v.montant_total)}</span></TableCell>
-                    <TableCell align="right"><span style={{ color: "var(--success)" }}>{formatAr(v.montant_paye)}</span></TableCell>
-                    <TableCell align="right" className="font-bold"><span style={{ color: solde > 0 ? "var(--warning)" : "var(--success)" }}>{solde > 0 ? formatAr(solde) : "Payé"}</span></TableCell>
-                    <TableCell align="center"><StatusBadge status={v.statut ?? "en_attente"} /></TableCell>
-                    <TableCell align="center">
+                    <TableCell className="col-md font-semibold font-mono text-xs truncate whitespace-nowrap"><span style={{ color: "var(--text-secondary)" }}>{v.numero_facture || "—"}</span></TableCell>
+                    <TableCell className="col-lg text-sm truncate whitespace-nowrap"><span style={{ color: "var(--text-secondary)" }}>{v.client_nom || "—"}</span></TableCell>
+                    <TableCell className="col-sm text-xs"><span style={{ color: "var(--text-muted)" }}>{v.date_vente ? new Date(v.date_vente).toLocaleDateString("fr-FR") : "—"}</span></TableCell>
+                    <TableCell align="right" className="col-sm font-bold"><span style={{ color: "var(--text-primary)" }}>{formatAr(v.montant_total)}</span></TableCell>
+                    <TableCell align="right" className="col-sm"><span style={{ color: "var(--success)" }}>{formatAr(v.montant_paye)}</span></TableCell>
+                    <TableCell align="right" className="col-sm font-bold"><span style={{ color: solde > 0 ? "var(--warning)" : "var(--success)" }}>{solde > 0 ? formatAr(solde) : "Payé"}</span></TableCell>
+                    <TableCell align="center" className="col-sm"><StatusBadge status={v.statut ?? "en_attente"} /></TableCell>
+                    <TableCell align="center" className="col-lg">
                       <div className="flex gap-1 justify-center">
-                        <Button variant="secondary" size="sm" onClick={() => handlePrint(v.id)} className="btn-press">🖨️</Button>
-                        <Button variant="primary" size="sm" onClick={() => handleEdit(v)} className="btn-press">✏️</Button>
-                        <Button variant="danger" size="sm" onClick={() => setShowDeleteModal(v.id)} className="btn-press">🗑️</Button>
+                        <Button variant="secondary" size="sm" onClick={() => handlePrint(v.id)} className="btn-press !px-2">🖨️</Button>
+                        <Button variant="primary" size="sm" onClick={() => handleEdit(v)} className="btn-press !px-2">✏️</Button>
+                        <Button variant="danger" size="sm" onClick={() => setShowDeleteModal(v.id)} className="btn-press !px-2">🗑️</Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -431,8 +431,16 @@ export default function Ventes() {
 
             {/* Colonne droite : Panier & Formulaire */}
             <div>
-              <div className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--text-muted)" }}>
-                🛒 Panier ({panier.filter((p) => p.is_pack && String(p.produit_id).startsWith("pack_")).length} pack{panier.filter((p) => p.is_pack && String(p.produit_id).startsWith("pack_")).length !== 1 ? "s" : ""}, {panier.filter((p) => !p.is_pack || (p.is_pack && !String(p.produit_id).startsWith("pack_"))).length} produit{panier.filter((p) => !p.is_pack || (p.is_pack && !String(p.produit_id).startsWith("pack_"))).length !== 1 ? "s" : ""})
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
+                  🛒 Panier ({panier.filter((p) => p.is_pack && String(p.produit_id).startsWith("pack_")).length} pack{panier.filter((p) => p.is_pack && String(p.produit_id).startsWith("pack_")).length !== 1 ? "s" : ""}, {panier.filter((p) => !p.is_pack || (p.is_pack && !String(p.produit_id).startsWith("pack_"))).length} produit{panier.filter((p) => !p.is_pack || (p.is_pack && !String(p.produit_id).startsWith("pack_"))).length !== 1 ? "s" : ""})
+                </div>
+                {panier.length > 0 && (
+                  <Button variant="ghost" size="sm" onClick={() => setPanier([])} className="btn-press text-[10px] !py-1 !px-2" style={{ color: "var(--danger)" }}>
+                    <Icon d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" size={12} />
+                    Vider le panier
+                  </Button>
+                )}
               </div>
               <div className="max-h-[200px] overflow-y-auto mb-3 space-y-1 rounded-xl p-1" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
                 {panier.length === 0 ? (

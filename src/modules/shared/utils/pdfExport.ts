@@ -1,4 +1,4 @@
-// pdfExport.ts — v4 : PDF couleur avec icônes statut SVG + remarques colorées
+// pdfExport.ts — Utilitaires communs + génération facture client
 import type { Company, Livraison } from "@/modules/shared/types";
 import { formatAr, STATUTS } from "./constants";
 
@@ -14,12 +14,12 @@ const STATUS_CFG: Record<string, { label: string; color: string; bg: string; bor
   en_cours: { label: "En cours",  color: "#c9a96e", bg: "#2e2a0a", border: "#c9a96e", icon: "clock" },
 };
 
-function getStatusCfg(statut?: string) {
+export function getStatusCfg(statut?: string) {
   return STATUS_CFG[statut || ""] || STATUS_CFG.en_cours;
 }
 
 /* ─── SVG icons as data URIs for PDF embedding ─── */
-function getIconSvg(name: string, color: string): string {
+export function getIconSvg(name: string, color: string): string {
   const paths: Record<string, string> = {
     check: "M20 6L9 17l-5-5",
     "rotate-left": "M1 4v6h6M23 20v-6h-6M20.49 9A9 9 0 1015.24 4.76L23 9",
@@ -31,7 +31,7 @@ function getIconSvg(name: string, color: string): string {
 }
 
 // ── Logo selon la société ─────────────────────────────────────────────
-const getCompanyLogo = (logoUrlParam: string | null = null, company: Company | null = null): string => {
+export const getCompanyLogo = (logoUrlParam: string | null = null, company: Company | null = null): string => {
   if (logoUrlParam) return logoUrlParam;
   if (company?.logo_url && typeof company.logo_url === "string") return company.logo_url;
   if (!company) return "/logos/aterinay/logo.png";
@@ -41,7 +41,7 @@ const getCompanyLogo = (logoUrlParam: string | null = null, company: Company | n
 };
 
 // ── CSS commun ticket thermique ───────────────────────────────────────
-const THERMAL_CSS = `
+export const THERMAL_CSS = `
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
   font-family: 'Courier New', Courier, monospace;
@@ -49,7 +49,8 @@ body {
   color: #000;
   background: #fff;
   margin: 0 auto;
-  padding: 4px;
+  padding: 6px;
+  width: 80mm;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
@@ -151,7 +152,7 @@ body {
 }
 `;
 
-function openPrintWindow(title: string): Window | null {
+export function openPrintWindow(title: string): Window | null {
   if (typeof window === "undefined") return null;
   const w = window.open("", "_blank");
   if (!w) { alert("Autorisez les popups pour imprimer"); return null; }
@@ -159,128 +160,10 @@ function openPrintWindow(title: string): Window | null {
   return w;
 }
 
-function closePrintWindow(w: Window) {
+export function closePrintWindow(w: Window) {
   try { w.document.close(); } catch (_) { /* noop */ }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// TICKET LIVREUR — Liste des livraisons par destinataire
-// ═══════════════════════════════════════════════════════════════════════
-export function printAgentList(
-  agent: Agent,
-  livraisons: Livraison[],
-  date: string,
-  logoUrlParam: string | null = null,
-  company: Company | null = null,
-): void {
-  const w = openPrintWindow(`Livraison - ${agent.nom || "—"} - ${date}`);
-  if (!w) return;
-
-  const logoUrl = getCompanyLogo(logoUrlParam, company);
-  const companyName = company?.name || "Aterinay Services";
-
-  const destsMap: Record<string, { destinataire: string; telephone: string; lieu: string; items: Livraison[]; totalMontant: number; totalFrais: number }> = {};
-  let grandMontant = 0;
-  let grandFrais = 0;
-
-  for (const l of livraisons) {
-    const dest = l.destinataire || "—";
-    const montant = l.paiement === "client" ? 0 : parseFloat(String(l.montant || 0));
-    const frais = parseFloat(String(l.frais || 0));
-    grandMontant += montant;
-    grandFrais += frais;
-
-    if (!destsMap[dest]) {
-      destsMap[dest] = { destinataire: dest, telephone: l.destinataire_telephone || "", lieu: l.destinataire_lieu || "", items: [], totalMontant: 0, totalFrais: 0 };
-    }
-    destsMap[dest].items.push(l);
-    destsMap[dest].totalMontant += montant;
-    destsMap[dest].totalFrais += frais;
-  }
-
-  let corpsHtml = "";
-  let numDest = 1;
-
-  for (const key of Object.keys(destsMap)) {
-    const d = destsMap[key];
-    const totalDest = d.totalMontant + d.totalFrais;
-
-    let itemsHtml = "";
-    d.items.forEach((l: Livraison, i: number) => {
-      const montant = l.paiement === "client" ? 0 : parseFloat(String(l.montant || 0));
-      const frais = parseFloat(String(l.frais || 0));
-      const montantTxt = l.paiement === "client" ? "CLIENT" : formatAr(montant);
-      const sc = getStatusCfg(l.statut);
-      const iconSvg = getIconSvg(sc.icon, sc.color);
-
-      itemsHtml += `
-      <div class="livraison-item">
-        <div class="bold" style="font-size:12px;">${i + 1}. ${l.colis || "—"}</div>
-        <div class="row"><span class="label">Donneur :</span><span class="val">${l.client_donneur || "—"}</span></div>
-        <div class="row"><span class="label">Montant :</span><span class="val">${montantTxt}</span></div>
-        ${frais > 0 ? `<div class="row"><span class="label">Frais   :</span><span class="val">${formatAr(frais)}</span></div>` : ""}
-        <div class="row">
-          <span class="label">Statut  :</span>
-          <span class="val" style="color:${sc.color};">${iconSvg} ${sc.label}</span>
-        </div>
-      </div>`;
-    });
-
-    corpsHtml += `
-    <div class="block">
-      <div class="block-title">DEST. ${numDest} : ${d.destinataire}</div>
-      ${d.telephone ? `<div class="row"><span class="label">Tel  :</span><span class="val">${d.telephone}</span></div>` : ""}
-      ${d.lieu ? `<div class="row"><span class="label">Lieu :</span><span class="val">${d.lieu}</span></div>` : ""}
-      ${itemsHtml}
-      <div style="margin-top:4px; padding-top:4px; border-top:1px solid #000;">
-        ${d.totalMontant > 0 ? `<div class="row"><span class="label">Montant :</span><span class="val">${formatAr(d.totalMontant)}</span></div>` : ""}
-        ${d.totalFrais > 0 ? `<div class="row"><span class="label">Frais   :</span><span class="val">${formatAr(d.totalFrais)}</span></div>` : ""}
-        <div class="row bold"><span class="label">TOTAL   :</span><span class="val">${formatAr(totalDest)}</span></div>
-      </div>
-    </div>`;
-    numDest++;
-  }
-
-  const agentNom = agent.nom || "—";
-
-  w.document.write(`<!DOCTYPE html>
-  <html><head><meta charset="UTF-8"><title>${companyName} - ${agentNom} - ${date}</title>
-  <style>body { width:72mm; } ${THERMAL_CSS}</style>
-  </head><body>
-  <div class="no-print" style="text-align:center; padding:8px 0; border-bottom:2px solid #000; margin-bottom:8px;">
-    <button class="btn-print" onclick="window.print()">IMPRIMER</button>
-    <button class="btn-close" onclick="window.close()">FERMER</button>
-  </div>
-  <div class="center">
-    <img src="${logoUrl}" class="logo" onerror="this.style.display='none'">
-    <div class="bold" style="font-size:14px; letter-spacing:1px;">${companyName.toUpperCase()}</div>
-    <div style="font-size:11px;">FEUILLE DE LIVRAISON</div>
-  </div>
-  <hr class="sep">
-  <div class="row"><span class="label">DATE    :</span><span class="val">${date}</span></div>
-  <div class="row"><span class="label">LIVREUR :</span><span class="val">${agentNom.toUpperCase()}</span></div>
-  <div class="row"><span class="label">COLIS   :</span><span class="val">${livraisons.length}</span></div>
-  <hr class="sep">
-  ${corpsHtml}
-  <div class="total-section">
-    <div style="font-size:11px; margin-bottom:4px; text-transform:uppercase; letter-spacing:1px;">RECAPITULATIF</div>
-    ${grandMontant > 0 ? `<div class="row"><span class="label">Total montant :</span><span class="val">${formatAr(grandMontant)}</span></div>` : ""}
-    ${grandFrais > 0 ? `<div class="row"><span class="label">Total frais   :</span><span class="val">${formatAr(grandFrais)}</span></div>` : ""}
-    <div class="row total-grand"><span class="label">A REMETTRE    :</span><span class="val">${formatAr(grandMontant + grandFrais)}</span></div>
-  </div>
-  <div class="sep2">- - - - - - - - - - - - - -</div>
-  <div class="center" style="font-size:10px;">Signature livreur :</div>
-  <div style="height:28px; border-bottom:1px solid #000; margin:4px 8px;"></div>
-  <div class="center" style="font-size:9px; margin-top:6px;">Merci pour votre travail</div>
-  <div class="no-print">
-    <button class="btn-print" onclick="window.print()">IMPRIMER</button>
-    <button class="btn-close" onclick="window.close()">FERMER</button>
-  </div>
-  </body></html>`);
-
-  closePrintWindow(w);
-  setTimeout(() => w.print(), 400);
-}
 
 // ═══════════════════════════════════════════════════════════════════════
 // TICKET CLIENT — Facture / bilan du client donneur (COULEUR)

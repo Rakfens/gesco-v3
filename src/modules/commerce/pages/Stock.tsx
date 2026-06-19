@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   Badge, Button, Card, Input, Modal, ModalBody, ModalFooter, ModalHeader,
-  Select, StatCard, Table, TableBody, TableCell, TableEmpty, TableHead, TableHeader, TableRow,
+  Select, SkeletonTable, StatCard, Table, TableBody, TableCell, TableEmpty, TableHead, TableHeader, TableRow,
 } from "@/modules/shared/components/ui";
+import { Icon } from "@/modules/shared/components/ui";
 import { useApp } from "@/modules/shared/context/AppContext";
 import { useCompany } from "@/modules/shared/context/CompanyContext";
 import { useIsMobile } from "@/modules/shared/hooks/useIsMobile";
@@ -15,60 +16,14 @@ import { UNITES, formatAr } from "@/modules/shared/utils/constants";
 import { getSupabase } from "@/lib/supabase";
 import { createProduit, deleteProduit, fetchCategories, fetchProduits, updateProduit, updateStock } from "../services/produitService";
 
-/* ─── SVG Icons ─── */
-const BoxIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-  </svg>
-);
-const AlertIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-  </svg>
-);
-const BanIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-  </svg>
-);
-const CashIcon = ({ size = 16, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
-  </svg>
-);
-const PlusIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-);
-const EditIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-);
-const TrashIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
-);
-const InIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
-);
-const OutIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
-);
-const HistoryIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /><path d="M3 3v5h5" /></svg>
-);
-const SearchIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-);
-const FilterIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
-);
-
 /* ─── Types ─── */
 interface Mouvement { id: string; type: string; quantite: number; notes?: string; date_mouvement?: string; }
 
 /* ─── Status config ─── */
 const STATUS_CFG = {
-  ok: { label: "OK", color: "#34d399", bg: "rgba(52,211,153,0.08)", border: "rgba(52,211,153,0.15)" },
-  low: { label: "Bas", color: "#c9a96e", bg: "rgba(201,169,110,0.08)", border: "rgba(201,169,110,0.15)" },
-  out: { label: "Rupture", color: "#f87171", bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.15)" },
+  ok: { label: "OK", color: "var(--success)", bg: "rgba(52,211,153,0.08)", border: "rgba(52,211,153,0.15)" },
+  low: { label: "Bas", color: "var(--gold)", bg: "rgba(201,169,110,0.08)", border: "rgba(201,169,110,0.15)" },
+  out: { label: "Rupture", color: "var(--danger)", bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.15)" },
 };
 
 function getStatus(p: Produit) {
@@ -76,6 +31,12 @@ function getStatus(p: Produit) {
   const isLow = !isOut && (p.quantite_stock ?? 0) <= (p.stock_minimum ?? 0);
   return isOut ? STATUS_CFG.out : isLow ? STATUS_CFG.low : STATUS_CFG.ok;
 }
+
+const EditIcon = () => <Icon d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" size={12} />;
+const TrashIcon = () => <Icon d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" size={12} />;
+const InIcon = () => <Icon d="M12 5v14M5 12l7 7 7-7" size={12} />;
+const OutIcon = () => <Icon d="M12 19V5M5 12l7-7 7 7" size={12} />;
+const HistoryIcon = () => <Icon d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0zM3 3v5h5" size={12} />;
 
 /* ─── Card produit (mobile) ─── */
 function ProduitCard({ p, onEdit, onMovement, onHistory, onDelete }: {
@@ -98,13 +59,13 @@ function ProduitCard({ p, onEdit, onMovement, onHistory, onDelete }: {
 
         <div className="grid grid-cols-3 gap-2 mb-3">
           {[
-            { l: "ACHAT", v: formatAr(p.prix_achat) },
-            { l: "VENTE", v: formatAr(p.prix_vente) },
-            { l: "STOCK", v: `${p.quantite_stock} ${p.unite || ""}` },
+            { l: "ACHAT", v: formatAr(p.prix_achat), c: "var(--warning)" },
+            { l: "VENTE", v: formatAr(p.prix_vente), c: "var(--success)" },
+            { l: "STOCK", v: `${p.quantite_stock} ${p.unite || ""}`, c: st.color },
           ].map((r) => (
             <div key={r.l} className="rounded-lg py-1.5 px-2 text-center" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
               <div className="text-[9px] mb-0.5" style={{ color: "var(--text-muted)" }}>{r.l}</div>
-              <div className="text-xs font-bold" style={{ color: r.l === "VENTE" ? "var(--success)" : r.l === "ACHAT" ? "var(--warning)" : st.color }}>{r.v}</div>
+              <div className="text-xs font-bold" style={{ color: r.c }}>{r.v}</div>
             </div>
           ))}
         </div>
@@ -112,7 +73,7 @@ function ProduitCard({ p, onEdit, onMovement, onHistory, onDelete }: {
         {marge !== null && (
           <div className="flex items-center gap-2 mb-3 px-2 py-1.5 rounded-lg" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
             <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>Marge :</span>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: Number(marge) >= 20 ? "rgba(52,211,153,0.08)" : Number(marge) >= 0 ? "rgba(201,169,110,0.08)" : "rgba(248,113,113,0.08)", color: Number(marge) >= 20 ? "var(--success)" : Number(marge) >= 0 ? "var(--warning)" : "var(--danger)" }}>
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: Number(marge) >= 20 ? "rgba(52,211,153,0.08)" : Number(marge) >= 0 ? "rgba(201,169,110,0.08)" : "rgba(248,113,113,0.08)", color: Number(marge) >= 20 ? "var(--success)" : Number(marge) >= 0 ? "var(--gold)" : "var(--danger)" }}>
               {marge}%
             </span>
             {(p.stock_minimum ?? 0) > 0 && <span className="text-[10px] ml-auto" style={{ color: "var(--text-muted)" }}>Min: {p.stock_minimum}</span>}
@@ -120,10 +81,10 @@ function ProduitCard({ p, onEdit, onMovement, onHistory, onDelete }: {
         )}
 
         <div className="grid grid-cols-4 gap-1.5">
-          <Button variant="secondary" size="sm" onClick={() => onEdit(p)} icon={<EditIcon />}>✏️</Button>
-          <Button variant="primary" size="sm" onClick={() => onMovement(p)} icon={<InIcon />}>📦</Button>
-          <Button variant="ghost" size="sm" onClick={() => onHistory(p)} icon={<HistoryIcon />} style={{ color: "var(--violet)" }}>📋</Button>
-          <Button variant="danger" size="sm" onClick={() => onDelete(p)} icon={<TrashIcon />}>🗑️</Button>
+          <Button variant="secondary" size="sm" onClick={() => onEdit(p)} icon={<EditIcon />}>Modifier</Button>
+          <Button variant="primary" size="sm" onClick={() => onMovement(p)} icon={<InIcon />}>Mouvement</Button>
+          <Button variant="ghost" size="sm" onClick={() => onHistory(p)} icon={<HistoryIcon />} style={{ color: "var(--violet)" }}>Historique</Button>
+          <Button variant="danger" size="sm" onClick={() => onDelete(p)} icon={<TrashIcon />}>Supprimer</Button>
         </div>
       </div>
     </div>
@@ -158,8 +119,6 @@ export default function Stock() {
 
   const [form, setForm] = useState({ nom: "", reference: "", categorie: "", prix_achat: 0, prix_vente: 0, quantite_stock: 0, stock_minimum: 0, unite: "pièce" });
   const [movementForm, setMovementForm] = useState({ type: "entree", quantite: 0, notes: "" });
-
-  const uniteOptions = UNITES;
 
   useEffect(() => { setTimeout(() => setMounted(true), 50); }, []);
 
@@ -287,7 +246,7 @@ export default function Stock() {
           </div>
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" onClick={() => router.push("/commerce/rapports")} className="btn-press">← Rapports</Button>
-            <Button variant="primary" onClick={() => { resetForm(); setShowModal(true); }} className="btn-press shadow-gold" icon={<PlusIcon />}>Nouveau produit</Button>
+            <Button variant="primary" onClick={() => { resetForm(); setShowModal(true); }} className="btn-press" style={{ boxShadow: "0 0 20px rgba(201,169,110,0.15)" }} icon={<Icon d="M12 5v19M5 12h19" size={14} />}>Nouveau produit</Button>
           </div>
         </div>
       </div>
@@ -296,19 +255,19 @@ export default function Stock() {
           STATS
           ═══════════════════════════════════════════════════════ */}
       <div className={`grid gap-3 mb-5 ${isMobile ? "grid-cols-2" : "grid-cols-4"}`} style={sectionStyle(0.1)}>
-        <StatCard label="Total produits" value={stats.total} color="info" icon={<BoxIcon size={18} />} />
-        <StatCard label="Stock bas" value={stats.low} color="warning" icon={<AlertIcon size={18} />} />
-        <StatCard label="Rupture" value={stats.out} color="danger" icon={<BanIcon size={18} />} />
-        <StatCard label="Valeur stock" value={formatAr(stats.valeur)} color="accent" icon={<CashIcon size={18} />} />
+        <StatCard label="Total produits" value={stats.total} color="info" icon={<Icon d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" size={18} />} />
+        <StatCard label="Stock bas" value={stats.low} color="warning" icon={<Icon d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" size={18} />} />
+        <StatCard label="Rupture" value={stats.out} color="danger" icon={<Icon d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" size={18} />} />
+        <StatCard label="Valeur stock" value={formatAr(stats.valeur)} color="accent" icon={<Icon d="M12 1v22M17 5H9.5a3.5 3.5 0 010-7h5a3.5 3.5 0 000 7H6M17 19h-5.5a3.5 3.5 0 010-7H19" size={18} />} />
       </div>
 
       {/* ═══════════════════════════════════════════════════════
           FILTRES
           ═══════════════════════════════════════════════════════ */}
-      <div className="mb-5 rounded-xl p-4" style={{ ...sectionStyle(0.15), border: "1px solid var(--border-subtle)", background: "var(--bg-card)" }}>
+      <div className="mb-5 rounded-2xl p-4" style={{ ...sectionStyle(0.15), border: "1px solid var(--border-subtle)", background: "var(--bg-card)" }}>
         <div className="flex items-center gap-2 mb-3">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: "rgba(96,165,250,0.08)", color: "var(--info)" }}>
-            <FilterIcon />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: "rgba(96,165,250,0.08)", color: "var(--info)" }}>
+            <Icon d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" size={14} />
           </div>
           <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>Filtres</span>
         </div>
@@ -344,13 +303,13 @@ export default function Stock() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableHeader>Produit</TableHeader>
-                <TableHeader>Catégorie</TableHeader>
-                <TableHeader align="right">Prix achat</TableHeader>
-                <TableHeader align="right">Prix vente</TableHeader>
-                <TableHeader align="right">Stock</TableHeader>
-                <TableHeader align="center">Statut</TableHeader>
-                <TableHeader align="center">Actions</TableHeader>
+                <TableHeader className="col-lg">Produit</TableHeader>
+                <TableHeader className="col-md">Catégorie</TableHeader>
+                <TableHeader align="right" className="col-sm">Prix achat</TableHeader>
+                <TableHeader align="right" className="col-sm">Prix vente</TableHeader>
+                <TableHeader align="right" className="col-sm">Stock</TableHeader>
+                <TableHeader align="center" className="col-sm">Statut</TableHeader>
+                <TableHeader align="center" className="col-md">Actions</TableHeader>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -360,23 +319,23 @@ export default function Stock() {
                 const st = getStatus(p);
                 return (
                   <TableRow key={p.id}>
-                    <TableCell>
-                      <div className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{p.nom}</div>
-                      {p.reference && <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>Réf: {p.reference}</div>}
+                    <TableCell className="col-lg">
+                      <div className="font-semibold text-sm truncate" style={{ color: "var(--text-primary)" }}>{p.nom}</div>
+                      {p.reference && <div className="text-[10px] truncate" style={{ color: "var(--text-muted)" }}>Réf: {p.reference}</div>}
                     </TableCell>
-                    <TableCell>{p.categorie ? <Badge variant="purple" size="sm">{p.categorie}</Badge> : "—"}</TableCell>
-                    <TableCell align="right" className="font-semibold"><span style={{ color: "var(--warning)" }}>{formatAr(p.prix_achat)}</span></TableCell>
-                    <TableCell align="right" className="font-semibold"><span style={{ color: "var(--success)" }}>{formatAr(p.prix_vente)}</span></TableCell>
-                    <TableCell align="right" className="font-bold"><span style={{ color: st.color }}>{p.quantite_stock} {p.unite || ""}</span></TableCell>
-                    <TableCell align="center">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: st.bg, color: st.color }}>{st.label}</span>
+                    <TableCell className="col-md"><span className="truncate">{p.categorie ? <Badge variant="purple" size="sm">{p.categorie}</Badge> : "—"}</span></TableCell>
+                    <TableCell align="right" className="font-semibold col-sm"><span style={{ color: "var(--warning)" }}>{formatAr(p.prix_achat)}</span></TableCell>
+                    <TableCell align="right" className="font-semibold col-sm"><span style={{ color: "var(--success)" }}>{formatAr(p.prix_vente)}</span></TableCell>
+                    <TableCell align="right" className="font-bold col-sm"><span style={{ color: st.color }}>{p.quantite_stock} {p.unite || ""}</span></TableCell>
+                    <TableCell align="center" className="col-sm">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: st.bg, color: st.color }}>{st.label}</span>
                     </TableCell>
-                    <TableCell align="center">
-                      <div className="flex gap-1 justify-center">
-                        <Button variant="secondary" size="sm" onClick={() => editProduit(p)} icon={<EditIcon />}>✏️</Button>
-                        <Button variant="primary" size="sm" onClick={() => { setSelectedProduit(p); setShowMovementModal(true); }} icon={<InIcon />}>📦</Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleViewHistory(p)} icon={<HistoryIcon />} style={{ color: "var(--violet)" }}>📋</Button>
-                        <Button variant="danger" size="sm" onClick={() => handleDeleteProduit(p)} icon={<TrashIcon />}>🗑️</Button>
+                    <TableCell align="center" className="col-md">
+                      <div className="flex gap-0.5 justify-center">
+                        <Button variant="secondary" size="sm" onClick={() => editProduit(p)}>✏️</Button>
+                        <Button variant="primary" size="sm" onClick={() => { setSelectedProduit(p); setShowMovementModal(true); }}>📦</Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleViewHistory(p)} style={{ color: "var(--violet)" }}>📋</Button>
+                        <Button variant="danger" size="sm" onClick={() => handleDeleteProduit(p)}>🗑️</Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -397,7 +356,7 @@ export default function Stock() {
             <Input label="Nom du produit *" placeholder="Ex: iPhone 15" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} />
             <Input label="Référence" placeholder="Ex: IP15-128" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
             <Input label="Catégorie" placeholder="Ex: Téléphones" value={form.categorie} onChange={(e) => setForm({ ...form, categorie: e.target.value })} />
-            <Select label="Unité" value={form.unite} onChange={(e) => setForm({ ...form, unite: e.target.value })} options={uniteOptions} />
+            <Select label="Unité" value={form.unite} onChange={(e) => setForm({ ...form, unite: e.target.value })} options={UNITES} />
             <Input type="number" label="Prix d'achat (Ar)" value={String(form.prix_achat)} onChange={(e) => setForm({ ...form, prix_achat: parseFloat(e.target.value) || 0 })} />
             <Input type="number" label="Prix de vente (Ar)" value={String(form.prix_vente)} onChange={(e) => setForm({ ...form, prix_vente: parseFloat(e.target.value) || 0 })} />
             <Input type="number" label="Stock initial" value={String(form.quantite_stock)} onChange={(e) => setForm({ ...form, quantite_stock: parseInt(e.target.value) || 0 })} />
@@ -406,7 +365,7 @@ export default function Stock() {
         </ModalBody>
         <ModalFooter>
           <Button variant="secondary" onClick={() => { setShowModal(false); resetForm(); }} className="btn-press">Annuler</Button>
-          <Button variant="primary" onClick={handleSubmit} loading={saving} disabled={saving} className="btn-press shadow-gold">{editMode ? "Modifier" : "Créer"}</Button>
+          <Button variant="primary" onClick={handleSubmit} loading={saving} disabled={saving} className="btn-press">{editMode ? "Modifier" : "Créer"}</Button>
         </ModalFooter>
       </Modal>
 
@@ -423,7 +382,7 @@ export default function Stock() {
                 <div className="text-xs" style={{ color: "var(--text-muted)" }}>Stock actuel : {selectedProduit.quantite_stock} {selectedProduit.unite || ""}</div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Select label="Type" value={movementForm.type} onChange={(e) => setMovementForm({ ...movementForm, type: e.target.value })} options={[{ value: "entree", label: "📥 Entrée" }, { value: "sortie", label: "📤 Sortie" }]} />
+                <Select label="Type" value={movementForm.type} onChange={(e) => setMovementForm({ ...movementForm, type: e.target.value })} options={[{ value: "entree", label: "Entrée" }, { value: "sortie", label: "Sortie" }]} />
                 <Input type="number" label="Quantité" value={String(movementForm.quantite)} onChange={(e) => setMovementForm({ ...movementForm, quantite: parseInt(e.target.value) || 0 })} />
               </div>
               <div className="mt-3">

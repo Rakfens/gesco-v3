@@ -11,10 +11,12 @@ import {
   Card,
   CardHeader,
   CardTitle,
+  Icon,
   Input,
   SkeletonGrid,
   StatCard,
 } from "@/modules/shared/components/ui";
+import { StatusIcon } from "@/modules/shared/components/ui/Icons";
 import { useApp } from "@/modules/shared/context/AppContext";
 import { useCompany } from "@/modules/shared/context/CompanyContext";
 import { useIsMobile } from "@/modules/shared/hooks/useIsMobile";
@@ -42,22 +44,6 @@ interface RecupParLivreur {
   nb: number;
   details: { client: string; frais: number }[];
 }
-
-/* ─── SVG Icon helper ─── */
-const Icon = ({ d, size = 18, className = "text-current" }: { d: string; size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d={d} />
-  </svg>
-);
-
-const StatusIcon = ({ name, size = 14, className = "text-current" }: { name: string; size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    {name === "clock" && <><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></>}
-    {name === "check" && <polyline points="20 6 9 17 4 12" />}
-    {name === "rotate-left" && <><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 10.49-3.74" /></>}
-    {name === "xmark" && <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>}
-  </svg>
-);
 
 /* ─── Status config ─── */
 const STATUS_OPTIONS = [
@@ -90,22 +76,6 @@ const statusTextColor = (statut?: string) => {
 
 const statusLabel = (statut?: string) => {
   return STATUS_OPTIONS.find((s) => s.key === statut)?.label || "En cours";
-};
-
-/* ─── Sparkline mini-chart ─── */
-const Sparkline = ({ data, color = "var(--gold)" }: { data: number[]; color?: string }) => {
-  if (data.length < 2) return null;
-  const max = Math.max(...data, 1);
-  const min = Math.min(...data, 0);
-  const range = max - min || 1;
-  const w = 60;
-  const h = 24;
-  const points = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / range) * h}`).join(" ");
-  return (
-    <svg width={w} height={h} className="opacity-60">
-      <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
 };
 
 /* ─── Status Buttons ─── */
@@ -379,18 +349,6 @@ export default function Dashboard() {
   const monthFrais = selectedMonthLivraisons.reduce((s, l) => s + (Number(l.frais) || 0), 0);
   const tauxReussite = totalLivraisons ? Math.round((totalLivres / totalLivraisons) * 100) : 0;
 
-  /* ─── Sparkline data (last 7 days) ─── */
-  const sparklineData = useMemo(() => {
-    const days: number[] = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().slice(0, 10);
-      days.push(safeLivraisons.filter((l) => l.date === dateStr && l.statut === "livre").length);
-    }
-    return days;
-  }, [safeLivraisons]);
-
   const sectionStyle = (delay: number): React.CSSProperties => ({
     opacity: mounted ? 1 : 0,
     transform: mounted ? "translateY(0)" : "translateY(16px)",
@@ -483,7 +441,6 @@ export default function Dashboard() {
           value={todayLivres}
           color="success"
           icon={<Icon d="M20 6L9 17l-5-5" size={18} />}
-          sub={sparklineData.length >= 2 ? "7 derniers jours" : undefined}
         />
         <StatCard
           label="Montant du mois"

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import Image from "next/image";
 import { logger } from "@/lib/logger";
 import {
-  Badge, Button, Card, CardTitle, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select, StatCard,
+  Badge, Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select,
 } from "@/modules/shared/components/ui";
 import { useApp } from "@/modules/shared/context/AppContext";
 import { useCompany } from "@/modules/shared/context/CompanyContext";

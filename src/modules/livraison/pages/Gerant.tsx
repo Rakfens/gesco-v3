@@ -18,28 +18,11 @@ import { Icon } from "@/modules/shared/components/ui/Icons";
 
 type TabKey = "jour" | "mois";
 
-/* ─── SVG Icons ─── */
-const CashIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
-  </svg>
-);
-const TrendUpIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" />
-  </svg>
-);
-const BoxIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
-    <path d="M3.3 7L12 12l8.7-5" /><path d="M12 22V12" />
-  </svg>
-);
-const EditIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
+/* ─── Icon path constants ─── */
+const CASH_D = "M2 7h20v10a2 2 0 01-2 2H4a2 2 0 01-2-2V7zM2 10h20";
+const TREND_UP_D = "M23 6l-9.5 9.5-5-5L1 18M17 6h6v6";
+const BOX_D = "M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16zM3.3 7L12 12l8.7-5M12 22V12";
+const EDIT_D = "M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z";
 
 export default function Gerant() {
   const { livraisons, commissionGerant, commissionLoading, updateCommission, showToast } = useApp();
@@ -149,7 +132,7 @@ export default function Gerant() {
               className="flex h-11 w-11 items-center justify-center rounded-xl"
               style={{ background: "rgba(201,169,110,0.1)", color: "var(--gold)" }}
             >
-              <CashIcon />
+              <Icon d={CASH_D} size={16} />
             </div>
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--gold)" }}>
@@ -169,7 +152,7 @@ export default function Gerant() {
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold btn-press transition-colors"
                     style={{ border: "1px solid rgba(201,169,110,0.2)", color: "var(--gold)", background: "rgba(201,169,110,0.06)" }}
                   >
-                    <EditIcon /> Modifier
+                    <Icon d={EDIT_D} size={14} /> Modifier
                   </button>
                 </div>
               )}
@@ -192,7 +175,7 @@ export default function Gerant() {
       <div className="flex gap-2 mb-5" style={sectionStyle(0.15)}>
         {(["jour", "mois"] as const).map((tab) => {
           const isActive = gerantTab === tab;
-          const IconComp = tab === "jour" ? CashIcon : TrendUpIcon;
+          const d = tab === "jour" ? CASH_D : TREND_UP_D;
           return (
             <button
               key={tab}
@@ -205,7 +188,7 @@ export default function Gerant() {
                 boxShadow: isActive ? "0 0 12px rgba(201,169,110,0.1)" : "none",
               }}
             >
-              <IconComp />
+              <Icon d={d} size={16} />
               {tab === "jour" ? "Par jour" : "Par mois"}
             </button>
           );
@@ -234,8 +217,8 @@ export default function Gerant() {
 
           {/* Stats jour */}
           <div className={`grid gap-3 mb-5 ${isMobile ? "grid-cols-2" : "grid-cols-4"}`}>
-            <StatCard label="Gain du jour" value={formatAr(dayGain)} color="accent" icon={<CashIcon />} sub={`${dayCount} livraison${dayCount !== 1 ? 's' : ''}`} />
-            <StatCard label="Livraisons" value={dayCount} color="warning" icon={<BoxIcon />} />
+            <StatCard label="Gain du jour" value={formatAr(dayGain)} color="accent" icon={<Icon d={CASH_D} size={16} />} sub={`${dayCount} livraison${dayCount !== 1 ? 's' : ''}`} />
+            <StatCard label="Livraisons" value={dayCount} color="warning" icon={<Icon d={BOX_D} size={16} />} />
             <StatCard label="Frais collectés" value={formatAr(dayFraisTotal)} color="purple" icon={<Icon d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" size={18} />} />
             <StatCard label="Frais nets" value={formatAr(dayNet)} color={dayNet >= 0 ? "success" : "danger"} icon={<Icon d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" size={18} />} />
           </div>
@@ -244,7 +227,7 @@ export default function Gerant() {
           <div className="mb-5 rounded-xl p-4 flex items-center justify-between" style={{ border: `1px solid ${dayNet >= 0 ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)"}`, background: dayNet >= 0 ? "rgba(52,211,153,0.03)" : "rgba(248,113,113,0.03)" }}>
             <div className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ background: `${dayNet >= 0 ? "rgba(52,211,153,0.1)" : "rgba(248,113,113,0.1)"}`, color: dayNet >= 0 ? "var(--success)" : "var(--danger)" }}>
-                <TrendUpIcon />
+                <Icon d={TREND_UP_D} size={16} />
               </div>
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Résultat net</div>
@@ -263,7 +246,7 @@ export default function Gerant() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: "rgba(201,169,110,0.08)", color: "var(--gold)" }}>
-                      <BoxIcon />
+                      <Icon d={BOX_D} size={16} />
                     </div>
                     <CardTitle className="text-sm">Détail des livraisons</CardTitle>
                   </div>
@@ -329,7 +312,7 @@ export default function Gerant() {
 
           {/* Stats mois */}
           <div className="grid gap-3 mb-5 grid-cols-2">
-            <StatCard label={`Gain total — ${monthLabel(gerantMonth)}`} value={formatAr(monthGain)} color="accent" icon={<CashIcon />} sub={`${monthCount} livraison${monthCount !== 1 ? 's' : ''}`} />
+            <StatCard label={`Gain total — ${monthLabel(gerantMonth)}`} value={formatAr(monthGain)} color="accent" icon={<Icon d={CASH_D} size={16} />} sub={`${monthCount} livraison${monthCount !== 1 ? 's' : ''}`} />
             <StatCard label="Frais collectés" value={formatAr(monthFrais)} color="purple" icon={<Icon d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" size={18} />} />
           </div>
 
@@ -337,7 +320,7 @@ export default function Gerant() {
           <div className="mb-5 rounded-xl p-4 flex items-center justify-between" style={{ border: `1px solid ${monthNet >= 0 ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)"}`, background: monthNet >= 0 ? "rgba(52,211,153,0.03)" : "rgba(248,113,113,0.03)" }}>
             <div className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ background: `${monthNet >= 0 ? "rgba(52,211,153,0.1)" : "rgba(248,113,113,0.1)"}`, color: monthNet >= 0 ? "var(--success)" : "var(--danger)" }}>
-                <TrendUpIcon />
+                <Icon d={TREND_UP_D} size={16} />
               </div>
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Résultat net du mois</div>
@@ -356,7 +339,7 @@ export default function Gerant() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: "rgba(139,92,246,0.08)", color: "var(--violet)" }}>
-                      <TrendUpIcon />
+                      <Icon d={TREND_UP_D} size={16} />
                     </div>
                     <CardTitle className="text-sm">Récapitulatif par jour</CardTitle>
                   </div>
