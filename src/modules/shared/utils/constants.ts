@@ -235,11 +235,8 @@ export const COMMISSION_DEFAUT = 500;
 // ==================== COMMISSION GÉRANT ====================
 export const EXCLUDED_CLIENTS: string[] = ["POMANAY", "ZAZATIANA"];
 
-export const shouldCountGerantCommission = (livraison: Livraison): boolean => {
-  const hasFrais = parseFloat(String(livraison.frais || 0)) > 0;
-  if (!hasFrais) return false;
-  const clientDonneur = livraison.client_donneur?.toUpperCase() || "";
-  return !EXCLUDED_CLIENTS.includes(clientDonneur);
+export const shouldCountGerantCommission = (_vente: Record<string, unknown>): boolean => {
+  return false;
 };
 
 export const getExcludedClientsText = (): string => EXCLUDED_CLIENTS.join(", ");
@@ -247,11 +244,11 @@ export const getExcludedClientsText = (): string => EXCLUDED_CLIENTS.join(", ");
 // ==================== CONFIGURATION PAR SOCIÉTÉ ====================
 export const COMPANY_CONFIG: Record<string, CompanyModuleConfig> = {
   service: {
-    name: "Service de livraison",
+    name: "Aterinay Service",
     icon: "🚚",
     primaryColor: "#c9a9f6",
     tailwindColor: "text-violet-300",
-    modules: ["livraisons", "agents", "avances", "recuperations", "gerant", "historique"],
+    modules: ["ventes", "achats", "stock", "inventaire", "depenses", "rapports"],
   },
   pomanay: {
     name: "Boutique accessoires",

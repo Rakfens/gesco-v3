@@ -53,9 +53,9 @@ export function getCompanyMeta(c: Company | null): CompanyMeta {
     };
   }
 
-  // Par défaut : Aterinay Service (livraison)
+  // Par défaut : Aterinay Service
   return {
-    label: "Livraison",
+    label: "Service",
     tailwindColor: "text-amber-400",
     tailwindBg: "bg-amber-400/5",
     tailwindBgHover: "hover:bg-amber-400/10",

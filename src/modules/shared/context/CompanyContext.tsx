@@ -63,7 +63,6 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     if (!companyId) return;
 
     const tables = [
-      "livraisons", "agents", "avances", "recuperations",
       "ventes", "achats", "produits",
     ];
 

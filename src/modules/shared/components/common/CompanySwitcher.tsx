@@ -99,7 +99,7 @@ export function CompanySwitcher() {
           {company.name}
           </div>
           <div className="text-[10px] text-[#6b6b7b]">
-          {company.type === "service" ? "Service livraison" : "Boutique"}
+          {company.type === "service" ? "Service" : "Boutique"}
           </div>
           </div>
           {isActive && (

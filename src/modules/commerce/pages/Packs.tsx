@@ -57,7 +57,7 @@ export default function PacksPage() {
   useEffect(() => { setTimeout(() => setMounted(true), 50); }, []);
 
   useEffect(() => {
-    if (currentCompany?.type === "service") { router.push("/livraison/dashboard"); }
+    if (currentCompany?.type === "service") { router.push("/commerce/dashboard"); }
   }, [currentCompany, router]);
 
   const loadData = async () => {

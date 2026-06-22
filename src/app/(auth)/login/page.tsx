@@ -102,7 +102,7 @@ export default function LoginPage() {
       const { data: uc } = await sb.from("user_companies").select("company:companies(*)").eq("user_id", userId);
       const list = (uc || []).map((r: any) => Array.isArray(r.company) ? r.company[0] : r.company).filter(Boolean) as Array<{ type?: string }>;
       const first = list[0];
-      if (!cancelled) router.replace(first?.type === "service" ? "/livraison/dashboard" : "/commerce/dashboard");
+      if (!cancelled) router.replace(first?.type === "service" ? "/commerce/dashboard" : "/commerce/dashboard");
     };
     check();
     return () => { cancelled = true; };
@@ -122,7 +122,7 @@ export default function LoginPage() {
         const { data: uc } = await sb.from("user_companies").select("company:companies(*)").eq("user_id", userId);
         const list = (uc || []).map((r: any) => Array.isArray(r.company) ? r.company[0] : r.company).filter(Boolean) as Array<{ type?: string }>;
         const first = list[0];
-        router.replace(first?.type === "service" ? "/livraison/dashboard" : "/commerce/dashboard");
+        router.replace(first?.type === "service" ? "/commerce/dashboard" : "/commerce/dashboard");
       } else router.replace("/commerce/dashboard");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Identifiants incorrects";

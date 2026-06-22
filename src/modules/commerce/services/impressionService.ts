@@ -14,7 +14,7 @@ const COMPANY_CONFIG: Record<string, CompanyConfig> = {
     name: "Aterinay Service",
     logo: "/logos/aterinay/logo.png",
     defaultLogo: "/logo-aterinay.png",
-    footer: "Service livraison - Merci pour votre confiance",
+    footer: "Merci pour votre confiance",
   },
   pomanay: {
     name: "Pomanay",
@@ -78,7 +78,7 @@ export const printTicketVente = (
       <div class="header">
         <img src="${logoUrl}" class="logo" alt="Logo" onerror="this.style.display='none'">
         <div class="shop-name">${config.name}</div>
-        <div class="shop-type">${company.type === "service" ? "Service livraison" : "Boutique"}</div>
+        <div class="shop-type">${company.type === "service" ? "Service" : "Boutique"}</div>
       </div>
       <div class="info-line"><span>Ticket N°:</span><span>${numeroFacture}</span></div>
       <div class="info-line"><span>Date:</span><span>${date}</span></div>

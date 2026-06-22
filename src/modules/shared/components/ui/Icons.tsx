@@ -32,7 +32,7 @@ function BaseIcon({
   );
 }
 
-/* ─── Generic Icon (used by livraison pages) ─── */
+/* ─── Generic Icon ─── */
 interface IconComponentProps extends IconProps {
   d: string;
 }
