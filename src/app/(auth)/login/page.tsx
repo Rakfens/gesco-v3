@@ -401,7 +401,7 @@ export default function LoginPage() {
                 </div>
                 <input
                   type="email"
-                  placeholder="admin@aterinay.com"
+                  placeholder="admin@gesco.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onFocus={() => setEmailFocused(true)}

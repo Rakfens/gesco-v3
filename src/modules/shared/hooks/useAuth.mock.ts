@@ -23,7 +23,7 @@ interface UseAuthReturn {
 /* ─── Mock Auth Hook ─── */
 export function useAuth(): UseAuthReturn {
   const [session, setSession] = useState<Session | null>({
-    user: { id: "mock-user-id", email: "admin@aterinay.com" },
+    user: { id: "mock-user-id", email: "admin@gesco.com" },
   });
   const [loading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -39,7 +39,7 @@ export function useAuth(): UseAuthReturn {
     }
 
     setSession({
-      user: { id: "mock-user-id", email: normalizedEmail || "admin@aterinay.com" },
+      user: { id: "mock-user-id", email: normalizedEmail || "admin@gesco.com" },
     });
     setAuthError(null);
   }, []);

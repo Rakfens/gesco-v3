@@ -65,8 +65,8 @@ export function getCompanyMeta(c: Company | null): CompanyMeta {
 }
 
 export function getLogoSrc(c: Company | null): string {
-  if (!c) return "/logos/aterinay/logo.png";
+  if (!c) return "/logos/default/logo.png";
   if (c.slug === "pomanay") return "/logos/pomanay/logo.png";
   if (c.slug === "zazatiana") return "/logos/zazatiana/logo.png";
-  return "/logos/aterinay/logo.png";
+  return "/logos/default/logo.png";
 }

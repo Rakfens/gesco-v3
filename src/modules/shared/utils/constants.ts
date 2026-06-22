@@ -228,7 +228,7 @@ export const COLORS: Record<string, string> = {
 };
 
 // ==================== AUTHENTIFICATION ====================
-export const LOGIN_EMAIL = "admin@aterinay.com";
+export const LOGIN_EMAIL = "admin@gesco.com";
 export const LOGIN_PASSWORD = "2462";
 export const COMMISSION_DEFAUT = 500;
 

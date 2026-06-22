@@ -34,10 +34,10 @@ export function getIconSvg(name: string, color: string): string {
 export const getCompanyLogo = (logoUrlParam: string | null = null, company: Company | null = null): string => {
   if (logoUrlParam) return logoUrlParam;
   if (company?.logo_url && typeof company.logo_url === "string") return company.logo_url;
-  if (!company) return "/logos/aterinay/logo.png";
+  if (!company) return "/logos/default/logo.png";
   if (company.slug === "pomanay") return "/logos/pomanay/logo.png";
   if (company.slug === "zazatiana") return "/logos/zazatiana/logo.png";
-  return "/logos/aterinay/logo.png";
+  return "/logos/default/logo.png";
 };
 
 // ── CSS commun ticket thermique ───────────────────────────────────────

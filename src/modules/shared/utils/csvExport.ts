@@ -67,7 +67,7 @@ const makeFilename = (prefix: string, companyName: string): string =>
 
 export const exportLivraisonsToCSV = (
   livraisons: Record<string, unknown>[],
-  companyName = "aterinay",
+  companyName = "gesco",
 ): void => {
   exportToCSV(
     livraisons,
@@ -82,14 +82,14 @@ export const exportLivraisonsToCSV = (
 
 export const exportAgentsToCSV = (
   agents: Record<string, unknown>[],
-  companyName = "aterinay",
+  companyName = "gesco",
 ): void => {
   exportToCSV(agents, ["id", "nom", "salaire", "created_at"], makeFilename("agents", companyName));
 };
 
 export const exportAvancesToCSV = (
   avances: Record<string, unknown>[],
-  companyName = "aterinay",
+  companyName = "gesco",
 ): void => {
   exportToCSV(
     avances,
@@ -100,7 +100,7 @@ export const exportAvancesToCSV = (
 
 export const exportRecuperationsToCSV = (
   recuperations: Record<string, unknown>[],
-  companyName = "aterinay",
+  companyName = "gesco",
 ): void => {
   exportToCSV(
     recuperations,

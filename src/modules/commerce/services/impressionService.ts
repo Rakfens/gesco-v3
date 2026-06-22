@@ -10,10 +10,10 @@ interface CompanyConfig {
 }
 
 const COMPANY_CONFIG: Record<string, CompanyConfig> = {
-  aterinay: {
-    name: "Aterinay Service",
-    logo: "/logos/aterinay/logo.png",
-    defaultLogo: "/logo-aterinay.png",
+  service: {
+    name: "Service",
+    logo: "/logos/service/logo.png",
+    defaultLogo: "/logo-service.png",
     footer: "Merci pour votre confiance",
   },
   pomanay: {
@@ -35,7 +35,7 @@ export const printTicketVente = (
   details: VenteDetailItem[],
   company: Company,
 ): void => {
-  const config = COMPANY_CONFIG[company.slug ?? ""] || COMPANY_CONFIG.aterinay;
+  const config = COMPANY_CONFIG[company.slug ?? ""] || COMPANY_CONFIG.service;
   const logoUrl = config.logo || config.defaultLogo;
 
   const date = vente.date_vente ? new Date(vente.date_vente).toLocaleString() : "";
@@ -134,7 +134,7 @@ export const printVentesList = (
   dateDebut: string,
   dateFin: string,
 ): void => {
-  const config = COMPANY_CONFIG[company.slug ?? ""] || COMPANY_CONFIG.aterinay;
+  const config = COMPANY_CONFIG[company.slug ?? ""] || COMPANY_CONFIG.service;
   const logoUrl = config.logo || config.defaultLogo;
   const totalVentes = ventes.reduce((s: number, v: Vente) => s + (v.montant_total || 0), 0);
 
